@@ -29,6 +29,16 @@ async def list_prompts(
     return [PromptRead.model_validate(prompt) for prompt in prompts]
 
 
+@router.get("/current", response_model=PromptRead)
+async def get_current_prompt(
+    agent_id: UUID,
+    service: Annotated[PromptService, Depends(get_prompt_service)],
+) -> PromptRead:
+    return PromptRead.model_validate(
+        await service.get_current_prompt_by_agent(agent_id)
+    )
+
+
 @router.get("/{prompt_id}", response_model=PromptRead)
 async def get_prompt(
     prompt_id: UUID,

@@ -29,6 +29,15 @@ class PromptService:
             raise NotFoundError(f"Prompt not found with id: {prompt_id}")
         return prompt
 
+    async def get_current_prompt_by_agent(self, agent_id: UUID) -> Prompt:
+        prompt = await self.repository.get_current_prompt_by_agent(agent_id)
+        if prompt is None:
+            logger.warning(
+                "Current prompt not found", extra={"agent_id": str(agent_id)}
+            )
+            raise NotFoundError(f"Current prompt not found for agent: {agent_id}")
+        return prompt
+
     async def add_prompt(self, data: PromptCreate) -> Prompt:
         prompt = await self.repository.add_prompt(data.model_dump())
         if prompt is None:

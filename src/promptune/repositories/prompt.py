@@ -22,6 +22,10 @@ class IPromptRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_current_prompt_by_agent(self, agent_id: UUID) -> Prompt | None:
+        pass
+
+    @abstractmethod
     async def add_prompt(self, data: dict[str, Any]) -> Prompt | None:
         pass
 
@@ -50,6 +54,17 @@ class PromptRepository(IPromptRepository):
             select(Prompt)
             .join(Agent)
             .where(Prompt.id == prompt_id, Agent.deleted_at.is_(None))
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_current_prompt_by_agent(self, agent_id: UUID) -> Prompt | None:
+        stmt = (
+            select(Prompt)
+            .join(Agent)
+            .where(Prompt.agent_id == agent_id, Agent.deleted_at.is_(None))
+            .order_by(Prompt.version.desc())
+            .limit(1)
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
