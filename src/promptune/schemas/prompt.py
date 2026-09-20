@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class PromptCreate(BaseModel):
     agent_id: UUID
-    description: Annotated[str, Field(min_length=1, max_length=200)]
+    description: Annotated[str | None, Field(min_length=1, max_length=200)] = None
     content: Annotated[str, Field(min_length=1)]
 
 
