@@ -7,6 +7,8 @@ from promptune.core.config import Settings, get_settings
 from promptune.core.logging import setup_logging
 from promptune.database.session import build_engine, build_session_maker
 from promptune.middleware.request_context import register_request_context_middleware
+from promptune.routers.agent import router as agent_router
+from promptune.routers.prompt import router as prompt_router
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +33,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(lifespan=lifespan)
     register_request_context_middleware(app)
+    app.include_router(agent_router)
+    app.include_router(prompt_router)
 
     @app.get("/")
     def read_root() -> dict:

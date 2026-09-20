@@ -15,5 +15,6 @@ class PromptRead(BaseModel):
     agent_id: UUID
     description: str
     content: str
+    version: int
 
     model_config = ConfigDict(from_attributes=True)
