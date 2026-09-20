@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import case, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from promptune.models.agent import Agent
@@ -12,7 +12,9 @@ from promptune.models.agent import Agent
 
 class IAgentRepository(ABC):
     @abstractmethod
-    async def get_all_agents(self, page: int, size: int) -> Sequence[Agent]:
+    async def get_all_agents(
+        self, page: int, size: int, query: str | None = None
+    ) -> Sequence[Agent]:
         pass
 
     @abstractmethod
@@ -36,12 +38,29 @@ class AgentRepository(IAgentRepository):
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def get_all_agents(self, page: int, size: int) -> Sequence[Agent]:
+    async def get_all_agents(
+        self, page: int, size: int, query: str | None = None
+    ) -> Sequence[Agent]:
         offset = (page - 1) * size
+        stmt = select(Agent).where(Agent.deleted_at.is_(None))
+        if query:
+            escaped = (
+                query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            )
+            pattern = f"%{escaped}%"
+            stmt = stmt.where(
+                or_(
+                    Agent.name.ilike(pattern, escape="\\"),
+                    Agent.description.ilike(pattern, escape="\\"),
+                )
+            ).order_by(
+                case(
+                    (Agent.name.ilike(f"{escaped}%", escape="\\"), 0),
+                    else_=1,
+                )
+            )
         stmt = (
-            select(Agent)
-            .where(Agent.deleted_at.is_(None))
-            .order_by(Agent.created_at.desc(), Agent.id.desc())
+            stmt.order_by(Agent.created_at.desc(), Agent.id.desc())
             .offset(offset)
             .limit(size)
         )
