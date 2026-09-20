@@ -2,6 +2,7 @@ import logging
 from collections.abc import Sequence
 from uuid import UUID
 
+from promptune.core.exceptions import InvalidInputError, NotFoundError
 from promptune.models.prompt import Prompt
 from promptune.repositories.prompt import IPromptRepository
 from promptune.schemas.prompt import PromptCreate
@@ -17,7 +18,7 @@ class PromptService:
         self, agent_id: UUID, page: int, size: int
     ) -> Sequence[Prompt]:
         if page < 1 or size < 1:
-            raise ValueError("page and size must be positive integers")
+            raise InvalidInputError("page and size must be positive integers")
 
         return await self.repository.get_prompts_by_agent(agent_id, page, size)
 
@@ -25,7 +26,7 @@ class PromptService:
         prompt = await self.repository.get_prompt_by_id(prompt_id)
         if prompt is None:
             logger.warning("Prompt not found", extra={"prompt_id": str(prompt_id)})
-            raise LookupError(f"Prompt not found with id: {prompt_id}")
+            raise NotFoundError(f"Prompt not found with id: {prompt_id}")
         return prompt
 
     async def add_prompt(self, data: PromptCreate) -> Prompt:
@@ -35,7 +36,7 @@ class PromptService:
                 "Agent not found for prompt creation",
                 extra={"agent_id": str(data.agent_id)},
             )
-            raise LookupError(f"Agent not found with id: {data.agent_id}")
+            raise NotFoundError(f"Agent not found with id: {data.agent_id}")
 
         logger.info(
             "Prompt created",
