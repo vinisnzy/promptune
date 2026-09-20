@@ -16,8 +16,8 @@ class Agent(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "agents"
 
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    description: Mapped[str] = mapped_column(String(300), nullable=False)
-    context: Mapped[str] = mapped_column(String(300), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(300))
+    context: Mapped[str | None] = mapped_column(String(300))
     prompts: Mapped[list[Prompt]] = relationship(back_populates="agent")
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=None
