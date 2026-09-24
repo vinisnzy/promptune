@@ -5,11 +5,14 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from promptune.database.session import get_async_session
+from promptune.dependencies.auth import get_current_user
 from promptune.repositories.prompt import PromptRepository
 from promptune.schemas.prompt import PromptCreate, PromptRead
 from promptune.services.prompt import PromptService
 
-router = APIRouter(prefix="/prompts", tags=["prompts"])
+router = APIRouter(
+    prefix="/prompts", tags=["prompts"], dependencies=[Depends(get_current_user)]
+)
 
 
 def get_prompt_service(
