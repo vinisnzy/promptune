@@ -19,7 +19,7 @@ class RefreshToken(UUIDMixin, TimestampMixin, Base):
     user_id: Mapped[UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    user: Mapped[User] = relationship(back_populates="users")
+    user: Mapped[User] = relationship(back_populates="refresh_tokens")
     token_hash: Mapped[str] = mapped_column(
         String(200), unique=True, index=True, nullable=False
     )
