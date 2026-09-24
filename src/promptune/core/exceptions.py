@@ -12,3 +12,11 @@ class NotFoundError(AppError):
 
 class InvalidInputError(AppError):
     status_code = 400
+
+
+class ConflictError(AppError):
+    status_code = 409
+
+
+class UnauthorizedError(AppError):
+    status_code = 401
