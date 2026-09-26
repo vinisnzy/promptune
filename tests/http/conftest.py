@@ -13,9 +13,11 @@ from promptune.dependencies.auth import get_auth_service
 from promptune.main import create_app
 from promptune.routers.agent import get_agent_service
 from promptune.routers.prompt import get_prompt_service
+from promptune.routers.revision import get_revision_service
 from promptune.services.agent import AgentService
 from promptune.services.auth import AuthService
 from promptune.services.prompt import PromptService
+from promptune.services.revision import RevisionService
 
 
 @pytest.fixture
@@ -47,6 +49,11 @@ def prompt_service_mock() -> AsyncMock:
 
 
 @pytest.fixture
+def revision_service_mock() -> AsyncMock:
+    return AsyncMock(spec=RevisionService)
+
+
+@pytest.fixture
 def auth_headers() -> dict[str, str]:
     return {"Authorization": "Bearer test-token"}
 
@@ -57,12 +64,14 @@ def app(
     auth_service_mock: AsyncMock,
     agent_service_mock: AsyncMock,
     prompt_service_mock: AsyncMock,
+    revision_service_mock: AsyncMock,
 ) -> FastAPI:
     app = create_app(settings)
     app.dependency_overrides[get_settings] = lambda: settings
     app.dependency_overrides[get_auth_service] = lambda: auth_service_mock
     app.dependency_overrides[get_agent_service] = lambda: agent_service_mock
     app.dependency_overrides[get_prompt_service] = lambda: prompt_service_mock
+    app.dependency_overrides[get_revision_service] = lambda: revision_service_mock
     return app
 
 

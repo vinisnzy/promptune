@@ -11,6 +11,7 @@ from promptune.middleware.request_context import register_request_context_middle
 from promptune.routers.agent import router as agent_router
 from promptune.routers.auth import router as auth_router
 from promptune.routers.prompt import router as prompt_router
+from promptune.routers.revision import router as revision_router
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth_router)
     app.include_router(agent_router)
     app.include_router(prompt_router)
+    app.include_router(revision_router)
 
     return app
 
