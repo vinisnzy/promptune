@@ -36,7 +36,9 @@ def create_token(
         "exp": now + expires_delta,
     }
     return jwt.encode(
-        payload, key=settings.jwt_secret, algorithm=settings.jwt_algorithm
+        payload,
+        key=settings.jwt_secret.get_secret_value(),
+        algorithm=settings.jwt_algorithm,
     )
 
 
@@ -44,7 +46,9 @@ def decode_token(
     token: str, expected_type: TokenType, settings: Settings
 ) -> dict[str, Any]:
     payload = jwt.decode(
-        token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
+        token,
+        settings.jwt_secret.get_secret_value(),
+        algorithms=[settings.jwt_algorithm],
     )
     if payload.get("type") != expected_type:
         raise jwt.InvalidTokenError("Unexpected token type")

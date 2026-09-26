@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parents[3]
 
 class Settings(BaseSettings):
     database_url: str
-    jwt_secret: str
+    jwt_secret: SecretStr
     jwt_algorithm: str
     access_token_expires_in_minutes: int = 15
     refresh_token_expires_in_days: int = 7
