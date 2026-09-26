@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, String
+from sqlalchemy import DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from promptune.models.base import Base, TimestampMixin, UUIDMixin
@@ -17,7 +17,7 @@ class Agent(UUIDMixin, TimestampMixin, Base):
 
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str | None] = mapped_column(String(300))
-    context: Mapped[str | None] = mapped_column(String(300))
+    context: Mapped[str | None] = mapped_column(Text)
     prompts: Mapped[list[Prompt]] = relationship(back_populates="agent")
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=None
