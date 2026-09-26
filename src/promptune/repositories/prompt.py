@@ -30,6 +30,23 @@ class IPromptRepository(ABC):
         pass
 
 
+async def create_next_prompt(
+    session: AsyncSession, agent_id: UUID, content: str, description: str | None = None
+) -> Prompt:
+    version_stmt = select(func.max(Prompt.version)).where(Prompt.agent_id == agent_id)
+    current_version = (await session.execute(version_stmt)).scalar_one()
+    version = (current_version or 0) + 1
+    prompt = Prompt(
+        agent_id=agent_id,
+        content=content,
+        description=description or f"v{version}",
+        version=version,
+    )
+    session.add(prompt)
+    await session.flush()
+    return prompt
+
+
 class PromptRepository(IPromptRepository):
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
@@ -80,18 +97,9 @@ class PromptRepository(IPromptRepository):
         if agent is None:
             return None
 
-        version_stmt = select(func.max(Prompt.version)).where(
-            Prompt.agent_id == agent_id
+        prompt = await create_next_prompt(
+            self.session, agent_id, data["content"], data.get("description")
         )
-        current_version = (await self.session.execute(version_stmt)).scalar_one()
-        version = (current_version or 0) + 1
-        prompt = Prompt(
-            agent_id=agent_id,
-            content=data["content"],
-            description=data.get("description") or f"v{version}",
-            version=version,
-        )
-        self.session.add(prompt)
         await self.session.commit()
         await self.session.refresh(prompt)
         return prompt
