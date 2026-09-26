@@ -11,7 +11,7 @@ from promptune.schemas.prompt import PromptCreate, PromptRead
 from promptune.services.prompt import PromptService
 
 router = APIRouter(
-    prefix="/prompts", tags=["prompts"], dependencies=[Depends(get_current_user)]
+    prefix="/prompts", tags=["Prompts"], dependencies=[Depends(get_current_user)]
 )
 
 
