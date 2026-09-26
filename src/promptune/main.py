@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
-    settings = settings or get_settings()
     setup_logging()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        engine = build_engine(settings)
+        app_settings = settings or get_settings()
+        engine = build_engine(app_settings)
         session_maker = build_session_maker(engine)
         app.state.settings = settings
         app.state.engine = engine
