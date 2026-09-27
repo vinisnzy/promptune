@@ -31,10 +31,7 @@ async def register(service: AuthServiceDependency, payload: UserCreate):
 
 
 @router.post("/login", response_model=TokenPair)
-async def login(
-    service: AuthServiceDependency,
-    payload: Annotated[LoginRequest, Depends()],
-):
+async def login(service: AuthServiceDependency, payload: LoginRequest):
     return await service.login(payload.email, payload.password)
 
 
