@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str
     access_token_expires_in_minutes: int = 15
     refresh_token_expires_in_days: int = 7
+    llm_model: str
+    llm_provider: str
     groq_api_key: SecretStr
 
     model_config = SettingsConfigDict(

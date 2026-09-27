@@ -1,13 +1,15 @@
 from collections.abc import Sequence
 from uuid import UUID
 
+from promptune.agents.prompt_revision.agent import (
+    IPromptRevisionAgent,
+)
 from promptune.core.exceptions import InvalidInputError, NotFoundError
 from promptune.models.revision import Revision
 from promptune.repositories.agent import IAgentRepository
 from promptune.repositories.prompt import IPromptRepository
 from promptune.repositories.revision import IRevisionRepository
 from promptune.schemas.revision import RevisionCreate
-from promptune.services.revision_generator import RevisionGenerator
 
 
 class RevisionService:
@@ -16,12 +18,12 @@ class RevisionService:
         repository: IRevisionRepository,
         prompt_repository: IPromptRepository,
         agent_repository: IAgentRepository,
-        generator: RevisionGenerator,
+        prompt_revision_agent: IPromptRevisionAgent,
     ) -> None:
         self.repository = repository
         self.prompt_repository = prompt_repository
         self.agent_repository = agent_repository
-        self.generator = generator
+        self.prompt_revision_agent = prompt_revision_agent
 
     async def list_by_agent(
         self, agent_id: UUID, page: int, size: int
@@ -48,7 +50,7 @@ class RevisionService:
         if agent is None:
             raise NotFoundError(f"Agent not found with id: {prompt.agent_id}")
 
-        draft = await self.generator.generate(
+        draft = await self.prompt_revision_agent.generate(
             prompt.content, prompt.description, agent.context, change_request
         )
         if not draft.proposed_content.strip():

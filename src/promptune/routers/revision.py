@@ -2,8 +2,11 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
+from langchain.chat_models import init_chat_model
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from promptune.agents.prompt_revision.agent import PromptRevisionAgent
+from promptune.core.config import Settings, get_settings
 from promptune.database.session import get_async_session
 from promptune.dependencies.auth import get_current_user
 from promptune.repositories.agent import AgentRepository
@@ -11,21 +14,32 @@ from promptune.repositories.prompt import PromptRepository
 from promptune.repositories.revision import RevisionRepository
 from promptune.schemas.revision import RevisionCreate, RevisionRead
 from promptune.services.revision import RevisionService
-from promptune.services.revision_generator import FakeRevisionGenerator
 
 router = APIRouter(
     prefix="/revisions", tags=["Revisions"], dependencies=[Depends(get_current_user)]
 )
 
 
+def get_prompt_revision_agent(settings: Annotated[Settings, Depends(get_settings)]):
+    model = init_chat_model(
+        model=settings.llm_model,
+        model_provider=settings.llm_provider,
+        api_key=settings.groq_api_key,
+    )
+    return PromptRevisionAgent(model)
+
+
 def get_revision_service(
     session: Annotated[AsyncSession, Depends(get_async_session)],
+    prompt_revision_agent: Annotated[
+        PromptRevisionAgent, Depends(get_prompt_revision_agent)
+    ],
 ) -> RevisionService:
     return RevisionService(
         repository=RevisionRepository(session),
         prompt_repository=PromptRepository(session),
         agent_repository=AgentRepository(session),
-        generator=FakeRevisionGenerator(),
+        prompt_revision_agent=prompt_revision_agent,
     )
 
 

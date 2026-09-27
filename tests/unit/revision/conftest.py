@@ -3,9 +3,9 @@ import pytest
 from promptune.services.agent import AgentService
 from promptune.services.prompt import PromptService
 from promptune.services.revision import RevisionService
-from promptune.services.revision_generator import FakeRevisionGenerator
 from tests.unit.agent.in_memory_repository import InMemoryAgentRepository
 from tests.unit.prompt.in_memory_repository import InMemoryPromptRepository
+from tests.unit.revision.fake_agent import FakePromptRevisionAgent
 from tests.unit.revision.in_memory_repository import InMemoryRevisionRepository
 
 
@@ -49,5 +49,5 @@ def revision_service(
         revision_repository,
         prompt_repository,
         agent_repository,
-        FakeRevisionGenerator(),
+        FakePromptRevisionAgent(),
     )

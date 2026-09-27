@@ -1,19 +1,8 @@
-from typing import Protocol
-
+from promptune.agents.prompt_revision.agent import IPromptRevisionAgent
 from promptune.schemas.revision import RevisionDraft
 
 
-class RevisionGenerator(Protocol):
-    async def generate(
-        self,
-        source_content: str,
-        source_description: str,
-        agent_context: str | None,
-        change_request: str,
-    ) -> RevisionDraft: ...
-
-
-class FakeRevisionGenerator:
+class FakePromptRevisionAgent(IPromptRevisionAgent):
     async def generate(
         self,
         source_content: str,
