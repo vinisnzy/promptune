@@ -3,9 +3,9 @@ from collections.abc import Sequence
 from uuid import UUID
 
 from promptune.core.exceptions import InvalidInputError, NotFoundError
-from promptune.models.agent import Agent
-from promptune.repositories.agent import IAgentRepository
-from promptune.schemas.agent import AgentCreate, AgentUpdate
+from promptune.modules.agent.model import Agent
+from promptune.modules.agent.repository import IAgentRepository
+from promptune.modules.agent.schema import AgentCreate, AgentUpdate
 
 logger = logging.getLogger(__name__)
 

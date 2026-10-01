@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 from sqlalchemy import DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from promptune.models.base import Base, TimestampMixin, UUIDMixin
+from promptune.database.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
-    from promptune.models import Prompt
+    from promptune.modules.prompt.model import Prompt
 
 
 class Agent(UUIDMixin, TimestampMixin, Base):

@@ -1,8 +1,8 @@
 import pytest
 
-from promptune.services.agent import AgentService
-from promptune.services.prompt import PromptService
-from promptune.services.revision import RevisionService
+from promptune.modules.agent.service import AgentService
+from promptune.modules.prompt.service import PromptService
+from promptune.modules.revision.service import RevisionService
 from tests.unit.agent.in_memory_repository import InMemoryAgentRepository
 from tests.unit.prompt.in_memory_repository import InMemoryPromptRepository
 from tests.unit.revision.fake_agent import FakePromptRevisionAgent

@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from promptune.models.revision import RevisionStatus
+from promptune.modules.revision.model import RevisionStatus
 
 
 class RevisionCreate(BaseModel):

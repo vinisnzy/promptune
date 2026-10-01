@@ -6,11 +6,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from promptune.core.exceptions import ConflictError
-from promptune.models.agent import Agent
-from promptune.models.prompt import Prompt
-from promptune.models.revision import Revision, RevisionStatus
-from promptune.repositories.prompt import create_next_prompt
-from promptune.schemas.revision import RevisionDraft
+from promptune.modules.agent.model import Agent
+from promptune.modules.prompt.model import Prompt
+from promptune.modules.prompt.repository import create_next_prompt
+from promptune.modules.revision.model import Revision, RevisionStatus
+from promptune.modules.revision.schema import RevisionDraft
 
 
 class IRevisionRepository(ABC):

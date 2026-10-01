@@ -4,7 +4,7 @@ from typing import Protocol
 from langchain.agents import create_agent
 from langchain.chat_models import BaseChatModel
 
-from promptune.schemas.revision import RevisionDraft
+from promptune.modules.revision.schema import RevisionDraft
 
 SYSTEM_PROMPT = """
 Você revisa prompts Markdown de agentes de triagem e agendamento.

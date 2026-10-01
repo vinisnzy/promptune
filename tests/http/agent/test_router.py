@@ -6,7 +6,7 @@ import pytest
 from httpx import AsyncClient
 
 from promptune.core.exceptions import NotFoundError
-from promptune.schemas.agent import AgentCreate, AgentUpdate
+from promptune.modules.agent.schema import AgentCreate, AgentUpdate
 
 
 def agent_record(name: str = "Assistant") -> SimpleNamespace:

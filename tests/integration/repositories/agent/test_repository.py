@@ -4,8 +4,8 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from promptune.models.agent import Agent
-from promptune.repositories.agent import AgentRepository
+from promptune.modules.agent.model import Agent
+from promptune.modules.agent.repository import AgentRepository
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 

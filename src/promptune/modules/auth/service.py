@@ -14,9 +14,9 @@ from promptune.core.secret import (
     hash_token,
     verify_password,
 )
-from promptune.models.user import User
-from promptune.repositories.user import IUserRepository
-from promptune.schemas.auth import TokenPair, UserCreate
+from promptune.modules.auth.repository import IUserRepository
+from promptune.modules.auth.schema import TokenPair, UserCreate
+from promptune.modules.auth.models.user import User
 
 logger = logging.getLogger(__name__)
 

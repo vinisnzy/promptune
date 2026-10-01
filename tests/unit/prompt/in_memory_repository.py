@@ -3,8 +3,8 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from promptune.models.prompt import Prompt
-from promptune.repositories.prompt import IPromptRepository
+from promptune.modules.prompt.model import Prompt
+from promptune.modules.prompt.repository import IPromptRepository
 from tests.unit.agent.in_memory_repository import InMemoryAgentRepository
 
 

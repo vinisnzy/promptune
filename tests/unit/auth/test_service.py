@@ -11,9 +11,9 @@ from promptune.core.secret import (
     hash_token,
     verify_password,
 )
-from promptune.models.user import User
-from promptune.schemas.auth import UserCreate
-from promptune.services.auth import AuthService
+from promptune.modules.auth.schema import UserCreate
+from promptune.modules.auth.service import AuthService
+from promptune.modules.auth.models.user import User
 from tests.unit.auth.in_memory_repository import InMemoryUserRepository
 
 EMAIL = "person@example.com"

@@ -5,15 +5,15 @@ from fastapi import APIRouter, Depends, Query, status
 from langchain.chat_models import init_chat_model
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from promptune.agents.prompt_revision.agent import PromptRevisionAgent
 from promptune.core.config import Settings, get_settings
 from promptune.database.session import get_async_session
-from promptune.dependencies.auth import get_current_user
-from promptune.repositories.agent import AgentRepository
-from promptune.repositories.prompt import PromptRepository
-from promptune.repositories.revision import RevisionRepository
-from promptune.schemas.revision import RevisionCreate, RevisionRead
-from promptune.services.revision import RevisionService
+from promptune.modules.agent.repository import AgentRepository
+from promptune.modules.auth.dependencies import get_current_user
+from promptune.modules.prompt.repository import PromptRepository
+from promptune.modules.revision.agent import PromptRevisionAgent
+from promptune.modules.revision.repository import RevisionRepository
+from promptune.modules.revision.schema import RevisionCreate, RevisionRead
+from promptune.modules.revision.service import RevisionService
 
 router = APIRouter(
     prefix="/revisions", tags=["Revisions"], dependencies=[Depends(get_current_user)]

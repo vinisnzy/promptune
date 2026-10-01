@@ -6,8 +6,8 @@ from uuid import UUID
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from promptune.models.refresh_token import RefreshToken
-from promptune.models.user import User
+from promptune.modules.auth.models.refresh_token import RefreshToken
+from promptune.modules.auth.models.user import User
 
 
 class IUserRepository(ABC):

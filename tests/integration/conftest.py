@@ -4,9 +4,10 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
+import promptune.modules  # noqa: F401 - register all models
 from promptune.core.config import Settings
+from promptune.database.base import Base
 from promptune.database.session import build_engine
-from promptune.models import Base
 
 
 @pytest.fixture(scope="session")

@@ -9,15 +9,15 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from promptune.core.config import Settings, get_settings
-from promptune.dependencies.auth import get_auth_service
 from promptune.main import create_app
-from promptune.routers.agent import get_agent_service
-from promptune.routers.prompt import get_prompt_service
-from promptune.routers.revision import get_revision_service
-from promptune.services.agent import AgentService
-from promptune.services.auth import AuthService
-from promptune.services.prompt import PromptService
-from promptune.services.revision import RevisionService
+from promptune.modules.agent.router import get_agent_service
+from promptune.modules.agent.service import AgentService
+from promptune.modules.auth.dependencies import get_auth_service
+from promptune.modules.auth.service import AuthService
+from promptune.modules.prompt.router import get_prompt_service
+from promptune.modules.prompt.service import PromptService
+from promptune.modules.revision.router import get_revision_service
+from promptune.modules.revision.service import RevisionService
 
 
 @pytest.fixture

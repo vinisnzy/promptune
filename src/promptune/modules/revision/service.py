@@ -1,15 +1,15 @@
 from collections.abc import Sequence
 from uuid import UUID
 
-from promptune.agents.prompt_revision.agent import (
+from promptune.core.exceptions import InvalidInputError, NotFoundError
+from promptune.modules.agent.repository import IAgentRepository
+from promptune.modules.prompt.repository import IPromptRepository
+from promptune.modules.revision.agent import (
     IPromptRevisionAgent,
 )
-from promptune.core.exceptions import InvalidInputError, NotFoundError
-from promptune.models.revision import Revision
-from promptune.repositories.agent import IAgentRepository
-from promptune.repositories.prompt import IPromptRepository
-from promptune.repositories.revision import IRevisionRepository
-from promptune.schemas.revision import RevisionCreate
+from promptune.modules.revision.model import Revision
+from promptune.modules.revision.repository import IRevisionRepository
+from promptune.modules.revision.schema import RevisionCreate
 
 
 class RevisionService:

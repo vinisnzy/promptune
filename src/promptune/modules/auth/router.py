@@ -5,16 +5,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from promptune.core.config import get_settings
 from promptune.database.session import get_async_session
-from promptune.dependencies.auth import AuthServiceDependency, CurrentUser
-from promptune.repositories.user import UserRepository
-from promptune.schemas.auth import (
+from promptune.modules.auth.dependencies import AuthServiceDependency, CurrentUser
+from promptune.modules.auth.repository import UserRepository
+from promptune.modules.auth.schema import (
     LoginRequest,
     RefreshRequest,
     TokenPair,
     UserCreate,
     UserRead,
 )
-from promptune.services.auth import AuthService
+from promptune.modules.auth.service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 

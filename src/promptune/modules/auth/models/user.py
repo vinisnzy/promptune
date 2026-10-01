@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from promptune.models.base import Base, TimestampMixin, UUIDMixin
+from promptune.database.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
-    from promptune.models.refresh_token import RefreshToken
+    from promptune.modules.auth.models.refresh_token import RefreshToken
 
 
 class User(UUIDMixin, TimestampMixin, Base):

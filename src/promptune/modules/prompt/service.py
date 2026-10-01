@@ -3,9 +3,9 @@ from collections.abc import Sequence
 from uuid import UUID
 
 from promptune.core.exceptions import InvalidInputError, NotFoundError
-from promptune.models.prompt import Prompt
-from promptune.repositories.prompt import IPromptRepository
-from promptune.schemas.prompt import PromptCreate
+from promptune.modules.prompt.model import Prompt
+from promptune.modules.prompt.repository import IPromptRepository
+from promptune.modules.prompt.schema import PromptCreate
 
 logger = logging.getLogger(__name__)
 

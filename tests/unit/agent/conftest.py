@@ -1,6 +1,6 @@
 import pytest
 
-from promptune.services.agent import AgentService
+from promptune.modules.agent.service import AgentService
 from tests.unit.agent.in_memory_repository import InMemoryAgentRepository
 
 

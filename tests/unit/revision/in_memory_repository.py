@@ -3,9 +3,9 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from promptune.core.exceptions import ConflictError
-from promptune.models.revision import Revision, RevisionStatus
-from promptune.repositories.revision import IRevisionRepository
-from promptune.schemas.revision import RevisionDraft
+from promptune.modules.revision.model import Revision, RevisionStatus
+from promptune.modules.revision.repository import IRevisionRepository
+from promptune.modules.revision.schema import RevisionDraft
 from tests.unit.agent.in_memory_repository import InMemoryAgentRepository
 from tests.unit.prompt.in_memory_repository import InMemoryPromptRepository
 

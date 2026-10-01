@@ -7,7 +7,7 @@ import pytest
 from httpx import AsyncClient
 
 from promptune.core.exceptions import ConflictError
-from promptune.schemas.revision import RevisionCreate
+from promptune.modules.revision.schema import RevisionCreate
 
 
 def revision_record(source_prompt_id: UUID, agent_id: UUID) -> SimpleNamespace:

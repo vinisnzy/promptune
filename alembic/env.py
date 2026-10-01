@@ -5,9 +5,10 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+import promptune.modules  # noqa: F401 - register all models for autogenerate
 from alembic import context
 from promptune.core.config import get_settings
-from promptune.models import Base
+from promptune.database.base import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

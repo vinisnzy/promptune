@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from promptune.core.config import Settings, get_settings
 from promptune.core.exceptions import UnauthorizedError
 from promptune.database.session import get_async_session
-from promptune.models.user import User
-from promptune.repositories.user import UserRepository
-from promptune.services.auth import AuthService
+from promptune.modules.auth.repository import UserRepository
+from promptune.modules.auth.service import AuthService
+from promptune.modules.auth.models.user import User
 
 bearer_scheme = HTTPBearer(auto_error=False)
 

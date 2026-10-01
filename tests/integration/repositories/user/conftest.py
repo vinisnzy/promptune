@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from promptune.repositories.user import UserRepository
+from promptune.modules.auth.repository import UserRepository
 
 
 @pytest.fixture

@@ -5,10 +5,10 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from promptune.database.session import get_async_session
-from promptune.dependencies.auth import get_current_user
-from promptune.repositories.agent import AgentRepository
-from promptune.schemas.agent import AgentCreate, AgentRead, AgentUpdate
-from promptune.services.agent import AgentService
+from promptune.modules.agent.repository import AgentRepository
+from promptune.modules.agent.schema import AgentCreate, AgentRead, AgentUpdate
+from promptune.modules.agent.service import AgentService
+from promptune.modules.auth.dependencies import get_current_user
 
 router = APIRouter(
     prefix="/agents", tags=["Agents"], dependencies=[Depends(get_current_user)]

@@ -3,8 +3,8 @@ from uuid import UUID
 from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from promptune.models import Agent
-from promptune.models.base import Base, TimestampMixin, UUIDMixin
+from promptune.database.base import Base, TimestampMixin, UUIDMixin
+from promptune.modules.agent.model import Agent
 
 
 class Prompt(UUIDMixin, TimestampMixin, Base):

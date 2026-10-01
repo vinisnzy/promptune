@@ -3,11 +3,11 @@ from uuid import uuid4
 import pytest
 
 from promptune.core.exceptions import ConflictError
-from promptune.models.revision import RevisionStatus
-from promptune.repositories.agent import AgentRepository
-from promptune.repositories.prompt import PromptRepository
-from promptune.repositories.revision import RevisionRepository
-from promptune.schemas.revision import RevisionDraft
+from promptune.modules.agent.repository import AgentRepository
+from promptune.modules.prompt.repository import PromptRepository
+from promptune.modules.revision.model import RevisionStatus
+from promptune.modules.revision.repository import RevisionRepository
+from promptune.modules.revision.schema import RevisionDraft
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 

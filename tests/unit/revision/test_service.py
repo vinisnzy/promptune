@@ -3,13 +3,13 @@ from uuid import uuid4
 import pytest
 
 from promptune.core.exceptions import ConflictError, InvalidInputError, NotFoundError
-from promptune.models.revision import RevisionStatus
-from promptune.schemas.agent import AgentCreate
-from promptune.schemas.prompt import PromptCreate
-from promptune.schemas.revision import RevisionCreate
-from promptune.services.agent import AgentService
-from promptune.services.prompt import PromptService
-from promptune.services.revision import RevisionService
+from promptune.modules.agent.schema import AgentCreate
+from promptune.modules.agent.service import AgentService
+from promptune.modules.prompt.schema import PromptCreate
+from promptune.modules.prompt.service import PromptService
+from promptune.modules.revision.model import RevisionStatus
+from promptune.modules.revision.schema import RevisionCreate
+from promptune.modules.revision.service import RevisionService
 from tests.unit.revision.in_memory_repository import InMemoryRevisionRepository
 
 

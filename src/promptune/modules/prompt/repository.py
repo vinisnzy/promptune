@@ -6,8 +6,8 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from promptune.models.agent import Agent
-from promptune.models.prompt import Prompt
+from promptune.modules.agent.model import Agent
+from promptune.modules.prompt.model import Prompt
 
 
 class IPromptRepository(ABC):

@@ -1,5 +1,5 @@
-from promptune.agents.prompt_revision.agent import IPromptRevisionAgent
-from promptune.schemas.revision import RevisionDraft
+from promptune.modules.revision.agent import IPromptRevisionAgent
+from promptune.modules.revision.schema import RevisionDraft
 
 
 class FakePromptRevisionAgent(IPromptRevisionAgent):

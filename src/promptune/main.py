@@ -8,10 +8,10 @@ from promptune.core.exception_handlers import register_exception_handlers
 from promptune.core.logging import setup_logging
 from promptune.database.session import build_engine, build_session_maker
 from promptune.middleware.request_context import register_request_context_middleware
-from promptune.routers.agent import router as agent_router
-from promptune.routers.auth import router as auth_router
-from promptune.routers.prompt import router as prompt_router
-from promptune.routers.revision import router as revision_router
+from promptune.modules.agent.router import router as agent_router
+from promptune.modules.auth.router import router as auth_router
+from promptune.modules.prompt.router import router as prompt_router
+from promptune.modules.revision.router import router as revision_router
 
 logger = logging.getLogger(__name__)
 

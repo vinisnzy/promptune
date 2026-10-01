@@ -2,9 +2,9 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from promptune.models.refresh_token import RefreshToken
-from promptune.models.user import User
-from promptune.repositories.user import IUserRepository
+from promptune.modules.auth.models.refresh_token import RefreshToken
+from promptune.modules.auth.repository import IUserRepository
+from promptune.modules.auth.models.user import User
 
 
 class InMemoryUserRepository(IUserRepository):

@@ -3,10 +3,10 @@ from uuid import uuid4
 import pytest
 
 from promptune.core.exceptions import InvalidInputError, NotFoundError
-from promptune.schemas.agent import AgentCreate
-from promptune.schemas.prompt import PromptCreate
-from promptune.services.agent import AgentService
-from promptune.services.prompt import PromptService
+from promptune.modules.agent.schema import AgentCreate
+from promptune.modules.agent.service import AgentService
+from promptune.modules.prompt.schema import PromptCreate
+from promptune.modules.prompt.service import PromptService
 from tests.unit.prompt.in_memory_repository import InMemoryPromptRepository
 
 

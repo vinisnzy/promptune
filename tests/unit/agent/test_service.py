@@ -3,8 +3,8 @@ from uuid import uuid4
 import pytest
 
 from promptune.core.exceptions import InvalidInputError, NotFoundError
-from promptune.schemas.agent import AgentCreate, AgentUpdate
-from promptune.services.agent import AgentService
+from promptune.modules.agent.schema import AgentCreate, AgentUpdate
+from promptune.modules.agent.service import AgentService
 from tests.unit.agent.in_memory_repository import InMemoryAgentRepository
 
 

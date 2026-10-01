@@ -1,8 +1,8 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from promptune.repositories.agent import AgentRepository
-from promptune.repositories.prompt import PromptRepository
+from promptune.modules.agent.repository import AgentRepository
+from promptune.modules.prompt.repository import PromptRepository
 
 
 @pytest.fixture

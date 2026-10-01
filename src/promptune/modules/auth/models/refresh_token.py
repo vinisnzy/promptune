@@ -7,10 +7,10 @@ from uuid import UUID
 from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from promptune.models.base import Base, TimestampMixin, UUIDMixin
+from promptune.database.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
-    from promptune.models import User
+    from promptune.modules.auth.models.user_model import User
 
 
 class RefreshToken(UUIDMixin, TimestampMixin, Base):

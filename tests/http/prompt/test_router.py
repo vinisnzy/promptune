@@ -6,7 +6,7 @@ import pytest
 from httpx import AsyncClient
 
 from promptune.core.exceptions import NotFoundError
-from promptune.schemas.prompt import PromptCreate
+from promptune.modules.prompt.schema import PromptCreate
 
 
 def prompt_record(agent_id: UUID, version: int = 1) -> SimpleNamespace:

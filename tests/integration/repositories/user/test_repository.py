@@ -5,8 +5,8 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from promptune.models.refresh_token import RefreshToken
-from promptune.repositories.user import UserRepository
+from promptune.modules.auth.models.refresh_token import RefreshToken
+from promptune.modules.auth.repository import UserRepository
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 

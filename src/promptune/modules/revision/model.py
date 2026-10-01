@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy import JSON, CheckConstraint, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from promptune.models.base import Base, TimestampMixin, UUIDMixin
+from promptune.database.base import Base, TimestampMixin, UUIDMixin
 
 
 class RevisionStatus(StrEnum):

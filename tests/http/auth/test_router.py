@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 from httpx import AsyncClient
 
 from promptune.core.exceptions import ConflictError, UnauthorizedError
-from promptune.schemas.auth import TokenPair, UserCreate
+from promptune.modules.auth.schema import TokenPair, UserCreate
 
 
 async def test_should_register_user_and_serialize_response(
@@ -53,7 +53,7 @@ async def test_should_map_duplicate_registration_to_conflict(
     assert response.json() == {"detail": "Email already registered"}
 
 
-async def test_should_login_with_query_credentials(
+async def test_should_login_with_body_credentials(
     client: AsyncClient, auth_service_mock: AsyncMock
 ) -> None:
     auth_service_mock.login.return_value = TokenPair(
@@ -61,7 +61,7 @@ async def test_should_login_with_query_credentials(
     )
 
     response = await client.post(
-        "/auth/login", params={"email": "person@example.com", "password": "secret"}
+        "/auth/login", json={"email": "person@example.com", "password": "secret"}
     )
 
     assert response.status_code == 200
@@ -73,7 +73,7 @@ async def test_should_login_with_query_credentials(
     auth_service_mock.login.assert_awaited_once_with("person@example.com", "secret")
 
 
-async def test_should_require_login_query_credentials(
+async def test_should_require_login_body_credentials(
     client: AsyncClient, auth_service_mock: AsyncMock
 ) -> None:
     response = await client.post("/auth/login", json={"email": "person@example.com"})
@@ -88,7 +88,7 @@ async def test_should_map_invalid_login_to_unauthorized(
     auth_service_mock.login.side_effect = UnauthorizedError("Invalid credentials")
 
     response = await client.post(
-        "/auth/login", params={"email": "person@example.com", "password": "wrong"}
+        "/auth/login", json={"email": "person@example.com", "password": "wrong"}
     )
 
     assert response.status_code == 401
