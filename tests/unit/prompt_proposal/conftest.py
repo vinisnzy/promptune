@@ -2,11 +2,13 @@ import pytest
 
 from promptune.modules.agent.service import AgentService
 from promptune.modules.prompt.service import PromptService
-from promptune.modules.revision.service import RevisionService
+from promptune.modules.prompt_proposal.service import PromptProposalService
 from tests.unit.agent.in_memory_repository import InMemoryAgentRepository
 from tests.unit.prompt.in_memory_repository import InMemoryPromptRepository
-from tests.unit.revision.fake_agent import FakePromptRevisionAgent
-from tests.unit.revision.in_memory_repository import InMemoryRevisionRepository
+from tests.unit.prompt_proposal.fake_agent import FakePromptRevisionAgent
+from tests.unit.prompt_proposal.in_memory_repository import (
+    InMemoryPromptProposalRepository,
+)
 
 
 @pytest.fixture
@@ -22,11 +24,11 @@ def prompt_repository(
 
 
 @pytest.fixture
-def revision_repository(
+def prompt_proposal_repository(
     agent_repository: InMemoryAgentRepository,
     prompt_repository: InMemoryPromptRepository,
-) -> InMemoryRevisionRepository:
-    return InMemoryRevisionRepository(agent_repository, prompt_repository)
+) -> InMemoryPromptProposalRepository:
+    return InMemoryPromptProposalRepository(agent_repository, prompt_repository)
 
 
 @pytest.fixture
@@ -40,13 +42,13 @@ def prompt_service(prompt_repository: InMemoryPromptRepository) -> PromptService
 
 
 @pytest.fixture
-def revision_service(
-    revision_repository: InMemoryRevisionRepository,
+def prompt_proposal_service(
+    prompt_proposal_repository: InMemoryPromptProposalRepository,
     prompt_repository: InMemoryPromptRepository,
     agent_repository: InMemoryAgentRepository,
-) -> RevisionService:
-    return RevisionService(
-        revision_repository,
+) -> PromptProposalService:
+    return PromptProposalService(
+        prompt_proposal_repository,
         prompt_repository,
         agent_repository,
         FakePromptRevisionAgent(),

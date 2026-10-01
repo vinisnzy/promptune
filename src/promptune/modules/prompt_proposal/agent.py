@@ -4,7 +4,7 @@ from typing import Protocol
 from langchain.agents import create_agent
 from langchain.chat_models import BaseChatModel
 
-from promptune.modules.revision.schema import RevisionDraft
+from promptune.modules.prompt_proposal.schema import PromptProposalDraft
 
 SYSTEM_PROMPT = """
 Você revisa prompts Markdown de agentes de triagem e agendamento.
@@ -33,7 +33,7 @@ class IPromptRevisionAgent(Protocol):
         source_description: str,
         agent_context: str | None,
         change_request: str,
-    ) -> RevisionDraft: ...
+    ) -> PromptProposalDraft: ...
 
 
 class PromptRevisionAgent(IPromptRevisionAgent):
@@ -42,7 +42,7 @@ class PromptRevisionAgent(IPromptRevisionAgent):
             model=model,
             tools=[],
             system_prompt=SYSTEM_PROMPT,
-            response_format=RevisionDraft,
+            response_format=PromptProposalDraft,
         )
 
     async def generate(
@@ -51,7 +51,7 @@ class PromptRevisionAgent(IPromptRevisionAgent):
         source_description: str,
         agent_context: str | None,
         change_request: str,
-    ) -> RevisionDraft:
+    ) -> PromptProposalDraft:
         task = {
             "source_content": source_content,
             "source_description": source_description,
@@ -66,4 +66,4 @@ class PromptRevisionAgent(IPromptRevisionAgent):
                 ]
             }
         )
-        return RevisionDraft.model_validate(result["structured_response"])
+        return PromptProposalDraft.model_validate(result["structured_response"])

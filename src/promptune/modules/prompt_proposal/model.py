@@ -7,14 +7,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 from promptune.database.base import Base, TimestampMixin, UUIDMixin
 
 
-class RevisionStatus(StrEnum):
+class PromptProposalStatus(StrEnum):
     PENDING = "pending"
     APPROVED = "approved"
     DISCARDED = "discarded"
 
 
-class Revision(UUIDMixin, TimestampMixin, Base):
-    __tablename__ = "revisions"
+class PromptProposal(UUIDMixin, TimestampMixin, Base):
+    __tablename__ = "prompt_proposals"
     __table_args__ = (
         CheckConstraint(
             "status IN ('pending', 'approved', 'discarded')",
@@ -30,7 +30,9 @@ class Revision(UUIDMixin, TimestampMixin, Base):
     summary: Mapped[list[str]] = mapped_column(JSON)
     questions: Mapped[list[str]] = mapped_column(JSON)
     warnings: Mapped[list[str]] = mapped_column(JSON)
-    status: Mapped[str] = mapped_column(String(20), default=RevisionStatus.PENDING)
+    status: Mapped[str] = mapped_column(
+        String(20), default=PromptProposalStatus.PENDING
+    )
     approved_prompt_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("prompts.id"), nullable=True
     )

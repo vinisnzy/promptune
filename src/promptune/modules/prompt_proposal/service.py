@@ -4,18 +4,18 @@ from uuid import UUID
 from promptune.core.exceptions import InvalidInputError, NotFoundError
 from promptune.modules.agent.repository import IAgentRepository
 from promptune.modules.prompt.repository import IPromptRepository
-from promptune.modules.revision.agent import (
+from promptune.modules.prompt_proposal.agent import (
     IPromptRevisionAgent,
 )
-from promptune.modules.revision.model import Revision
-from promptune.modules.revision.repository import IRevisionRepository
-from promptune.modules.revision.schema import RevisionCreate
+from promptune.modules.prompt_proposal.model import PromptProposal
+from promptune.modules.prompt_proposal.repository import IPromptProposalRepository
+from promptune.modules.prompt_proposal.schema import PromptProposalCreate
 
 
-class RevisionService:
+class PromptProposalService:
     def __init__(
         self,
-        repository: IRevisionRepository,
+        repository: IPromptProposalRepository,
         prompt_repository: IPromptRepository,
         agent_repository: IAgentRepository,
         prompt_revision_agent: IPromptRevisionAgent,
@@ -27,18 +27,20 @@ class RevisionService:
 
     async def list_by_agent(
         self, agent_id: UUID, page: int, size: int
-    ) -> Sequence[Revision]:
+    ) -> Sequence[PromptProposal]:
         if page < 1 or size < 1:
             raise InvalidInputError("page and size must be positive integers")
         return await self.repository.list_by_agent(agent_id, page, size)
 
-    async def get_by_id(self, revision_id: UUID) -> Revision:
-        revision = await self.repository.get_by_id(revision_id)
-        if revision is None:
-            raise NotFoundError(f"Revision not found with id: {revision_id}")
-        return revision
+    async def get_by_id(self, prompt_proposal_id: UUID) -> PromptProposal:
+        prompt_proposal = await self.repository.get_by_id(prompt_proposal_id)
+        if prompt_proposal is None:
+            raise NotFoundError(
+                f"Prompt proposal not found with id: {prompt_proposal_id}"
+            )
+        return prompt_proposal
 
-    async def create(self, data: RevisionCreate) -> Revision:
+    async def create(self, data: PromptProposalCreate) -> PromptProposal:
         change_request = data.change_request.strip()
         if not change_request:
             raise InvalidInputError("change_request must not be blank")
@@ -54,20 +56,24 @@ class RevisionService:
             prompt.content, prompt.description, agent.context, change_request
         )
         if not draft.proposed_content.strip():
-            raise InvalidInputError("Generated revision content must not be blank")
-        revision = await self.repository.create(prompt.id, change_request, draft)
-        if revision is None:
+            raise InvalidInputError("Generated prompt proposal content must not be blank")
+        prompt_proposal = await self.repository.create(prompt.id, change_request, draft)
+        if prompt_proposal is None:
             raise NotFoundError(f"Prompt not found with id: {data.source_prompt_id}")
-        return revision
+        return prompt_proposal
 
-    async def approve(self, revision_id: UUID) -> Revision:
-        revision = await self.repository.approve(revision_id)
-        if revision is None:
-            raise NotFoundError(f"Revision not found with id: {revision_id}")
-        return revision
+    async def approve(self, prompt_proposal_id: UUID) -> PromptProposal:
+        prompt_proposal = await self.repository.approve(prompt_proposal_id)
+        if prompt_proposal is None:
+            raise NotFoundError(
+                f"Prompt proposal not found with id: {prompt_proposal_id}"
+            )
+        return prompt_proposal
 
-    async def discard(self, revision_id: UUID) -> Revision:
-        revision = await self.repository.discard(revision_id)
-        if revision is None:
-            raise NotFoundError(f"Revision not found with id: {revision_id}")
-        return revision
+    async def discard(self, prompt_proposal_id: UUID) -> PromptProposal:
+        prompt_proposal = await self.repository.discard(prompt_proposal_id)
+        if prompt_proposal is None:
+            raise NotFoundError(
+                f"Prompt proposal not found with id: {prompt_proposal_id}"
+            )
+        return prompt_proposal

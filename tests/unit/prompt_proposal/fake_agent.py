@@ -1,5 +1,5 @@
-from promptune.modules.revision.agent import IPromptRevisionAgent
-from promptune.modules.revision.schema import RevisionDraft
+from promptune.modules.prompt_proposal.agent import IPromptRevisionAgent
+from promptune.modules.prompt_proposal.schema import PromptProposalDraft
 
 
 class FakePromptRevisionAgent(IPromptRevisionAgent):
@@ -9,8 +9,8 @@ class FakePromptRevisionAgent(IPromptRevisionAgent):
         source_description: str,
         agent_context: str | None,
         change_request: str,
-    ) -> RevisionDraft:
-        return RevisionDraft(
+    ) -> PromptProposalDraft:
+        return PromptProposalDraft(
             proposed_content=source_content,
             proposed_description=f"Revisão simulada: {source_description}"[:200],
             summary=["Simulação: nenhuma alteração foi aplicada ao prompt."],

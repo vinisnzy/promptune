@@ -16,8 +16,8 @@ from promptune.modules.auth.dependencies import get_auth_service
 from promptune.modules.auth.service import AuthService
 from promptune.modules.prompt.router import get_prompt_service
 from promptune.modules.prompt.service import PromptService
-from promptune.modules.revision.router import get_revision_service
-from promptune.modules.revision.service import RevisionService
+from promptune.modules.prompt_proposal.router import get_prompt_proposal_service
+from promptune.modules.prompt_proposal.service import PromptProposalService
 
 
 @pytest.fixture
@@ -49,8 +49,8 @@ def prompt_service_mock() -> AsyncMock:
 
 
 @pytest.fixture
-def revision_service_mock() -> AsyncMock:
-    return AsyncMock(spec=RevisionService)
+def prompt_proposal_service_mock() -> AsyncMock:
+    return AsyncMock(spec=PromptProposalService)
 
 
 @pytest.fixture
@@ -64,14 +64,16 @@ def app(
     auth_service_mock: AsyncMock,
     agent_service_mock: AsyncMock,
     prompt_service_mock: AsyncMock,
-    revision_service_mock: AsyncMock,
+    prompt_proposal_service_mock: AsyncMock,
 ) -> FastAPI:
     app = create_app(settings)
     app.dependency_overrides[get_settings] = lambda: settings
     app.dependency_overrides[get_auth_service] = lambda: auth_service_mock
     app.dependency_overrides[get_agent_service] = lambda: agent_service_mock
     app.dependency_overrides[get_prompt_service] = lambda: prompt_service_mock
-    app.dependency_overrides[get_revision_service] = lambda: revision_service_mock
+    app.dependency_overrides[get_prompt_proposal_service] = (
+        lambda: prompt_proposal_service_mock
+    )
     return app
 
 

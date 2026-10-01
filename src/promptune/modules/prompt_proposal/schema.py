@@ -4,15 +4,15 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from promptune.modules.revision.model import RevisionStatus
+from promptune.modules.prompt_proposal.model import PromptProposalStatus
 
 
-class RevisionCreate(BaseModel):
+class PromptProposalCreate(BaseModel):
     source_prompt_id: UUID
     change_request: Annotated[str, Field(min_length=1)]
 
 
-class RevisionDraft(BaseModel):
+class PromptProposalDraft(BaseModel):
     proposed_content: str
     proposed_description: Annotated[str, Field(min_length=1, max_length=200)]
     summary: list[str]
@@ -20,7 +20,7 @@ class RevisionDraft(BaseModel):
     warnings: list[str]
 
 
-class RevisionRead(BaseModel):
+class PromptProposalRead(BaseModel):
     id: UUID
     agent_id: UUID
     source_prompt_id: UUID
@@ -30,7 +30,7 @@ class RevisionRead(BaseModel):
     summary: list[str]
     questions: list[str]
     warnings: list[str]
-    status: RevisionStatus
+    status: PromptProposalStatus
     approved_prompt_id: UUID | None
     created_at: datetime
     updated_at: datetime
