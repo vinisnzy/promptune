@@ -1,9 +1,9 @@
-from promptune.modules.prompt_proposal.agent import IPromptRevisionAgent
+from promptune.agents.prompt_editor.agent import IPromptEditorAgent
 from promptune.modules.prompt_proposal.schema import PromptProposalDraft
 
 
-class FakePromptRevisionAgent(IPromptRevisionAgent):
-    async def generate(
+class FakePromptEditorAgent(IPromptEditorAgent):
+    async def respond(
         self,
         source_content: str,
         source_description: str,

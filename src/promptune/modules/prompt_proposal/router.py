@@ -5,12 +5,12 @@ from fastapi import APIRouter, Depends, Query, status
 from langchain.chat_models import init_chat_model
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from promptune.agents.prompt_editor.agent import PromptEditorAgent
 from promptune.core.config import Settings, get_settings
 from promptune.database.session import get_async_session
 from promptune.modules.agent.repository import AgentRepository
 from promptune.modules.auth.dependencies import get_current_user
 from promptune.modules.prompt.repository import PromptRepository
-from promptune.modules.prompt_proposal.agent import PromptRevisionAgent
 from promptune.modules.prompt_proposal.repository import PromptProposalRepository
 from promptune.modules.prompt_proposal.schema import (
     PromptProposalCreate,
@@ -25,26 +25,26 @@ router = APIRouter(
 )
 
 
-def get_prompt_revision_agent(settings: Annotated[Settings, Depends(get_settings)]):
+def get_prompt_editor_agent(settings: Annotated[Settings, Depends(get_settings)]):
     model = init_chat_model(
         model=settings.llm_model,
         model_provider=settings.llm_provider,
         api_key=settings.groq_api_key,
     )
-    return PromptRevisionAgent(model)
+    return PromptEditorAgent(model)
 
 
 def get_prompt_proposal_service(
     session: Annotated[AsyncSession, Depends(get_async_session)],
-    prompt_revision_agent: Annotated[
-        PromptRevisionAgent, Depends(get_prompt_revision_agent)
+    prompt_editor_agent: Annotated[
+        PromptEditorAgent, Depends(get_prompt_editor_agent)
     ],
 ) -> PromptProposalService:
     return PromptProposalService(
         repository=PromptProposalRepository(session),
         prompt_repository=PromptRepository(session),
         agent_repository=AgentRepository(session),
-        prompt_revision_agent=prompt_revision_agent,
+        prompt_editor_agent=prompt_editor_agent,
     )
 
 

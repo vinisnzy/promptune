@@ -13,6 +13,8 @@ class PromptProposalCreate(BaseModel):
 
 
 class PromptProposalDraft(BaseModel):
+    """Deprecated flat agent response used by the legacy proposal endpoint."""
+
     proposed_content: str
     proposed_description: Annotated[str, Field(min_length=1, max_length=200)]
     summary: list[str]
@@ -21,6 +23,8 @@ class PromptProposalDraft(BaseModel):
 
 
 class PromptProposalRead(BaseModel):
+    """Deprecated response model used by the legacy proposal endpoint."""
+
     id: UUID
     agent_id: UUID
     source_prompt_id: UUID

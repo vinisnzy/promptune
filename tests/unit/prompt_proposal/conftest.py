@@ -5,7 +5,7 @@ from promptune.modules.prompt.service import PromptService
 from promptune.modules.prompt_proposal.service import PromptProposalService
 from tests.unit.agent.in_memory_repository import InMemoryAgentRepository
 from tests.unit.prompt.in_memory_repository import InMemoryPromptRepository
-from tests.unit.prompt_proposal.fake_agent import FakePromptRevisionAgent
+from tests.unit.prompt_proposal.fake_agent import FakePromptEditorAgent
 from tests.unit.prompt_proposal.in_memory_repository import (
     InMemoryPromptProposalRepository,
 )
@@ -51,5 +51,5 @@ def prompt_proposal_service(
         prompt_proposal_repository,
         prompt_repository,
         agent_repository,
-        FakePromptRevisionAgent(),
+        FakePromptEditorAgent(),
     )

@@ -1,12 +1,12 @@
 from collections.abc import Sequence
 from uuid import UUID
 
+from promptune.agents.prompt_editor.agent import (
+    IPromptEditorAgent,
+)
 from promptune.core.exceptions import InvalidInputError, NotFoundError
 from promptune.modules.agent.repository import IAgentRepository
 from promptune.modules.prompt.repository import IPromptRepository
-from promptune.modules.prompt_proposal.agent import (
-    IPromptRevisionAgent,
-)
 from promptune.modules.prompt_proposal.model import PromptProposal
 from promptune.modules.prompt_proposal.repository import IPromptProposalRepository
 from promptune.modules.prompt_proposal.schema import PromptProposalCreate
@@ -18,12 +18,12 @@ class PromptProposalService:
         repository: IPromptProposalRepository,
         prompt_repository: IPromptRepository,
         agent_repository: IAgentRepository,
-        prompt_revision_agent: IPromptRevisionAgent,
+        prompt_editor_agent: IPromptEditorAgent,
     ) -> None:
         self.repository = repository
         self.prompt_repository = prompt_repository
         self.agent_repository = agent_repository
-        self.prompt_revision_agent = prompt_revision_agent
+        self.prompt_editor_agent = prompt_editor_agent
 
     async def list_by_agent(
         self, agent_id: UUID, page: int, size: int
@@ -52,7 +52,7 @@ class PromptProposalService:
         if agent is None:
             raise NotFoundError(f"Agent not found with id: {prompt.agent_id}")
 
-        draft = await self.prompt_revision_agent.generate(
+        draft = await self.prompt_editor_agent.respond(
             prompt.content, prompt.description, agent.context, change_request
         )
         if not draft.proposed_content.strip():
