@@ -1,6 +1,7 @@
 """Register all module models in SQLAlchemy's shared metadata."""
 
 from promptune.modules.agent.model import Agent
+from promptune.modules.agent_run.model import AgentRun
 from promptune.modules.auth.models.refresh_token import RefreshToken
 from promptune.modules.auth.models.user import User
 from promptune.modules.message.model import Message
@@ -10,6 +11,7 @@ from promptune.modules.session.model import Session
 
 __all__ = [
     "Agent",
+    "AgentRun",
     "Message",
     "Prompt",
     "PromptProposal",

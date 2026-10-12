@@ -30,14 +30,13 @@ class PromptProposal(UUIDMixin, TimestampMixin, Base):
 
     agent_id: Mapped[UUID] = mapped_column(ForeignKey("agents.id"), index=True)
     source_prompt_id: Mapped[UUID] = mapped_column(ForeignKey("prompts.id"))
-    message_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("messages.id"), nullable=True, unique=True
+    message_id: Mapped[UUID] = mapped_column(
+        ForeignKey("messages.id"), nullable=False, unique=True
     )
     change_request: Mapped[str] = mapped_column(Text)
     proposed_content: Mapped[str] = mapped_column(Text)
     proposed_description: Mapped[str] = mapped_column(String(200))
     summary: Mapped[list[str]] = mapped_column(JSON)
-    # Compatibility with the existing proposal endpoint until it creates messages.
     questions: Mapped[list[str]] = mapped_column(JSON)
     warnings: Mapped[list[str]] = mapped_column(JSON)
     status: Mapped[str] = mapped_column(
@@ -47,7 +46,7 @@ class PromptProposal(UUIDMixin, TimestampMixin, Base):
         ForeignKey("prompts.id"), nullable=True
     )
 
-    message: Mapped[Message | None] = relationship(
+    message: Mapped[Message] = relationship(
         foreign_keys=[message_id],
         back_populates="proposal",
     )
