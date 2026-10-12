@@ -12,9 +12,7 @@ from promptune.modules.session.service import SessionService
 from tests.unit.message.in_memory_repository import InMemoryMessageRepository
 
 
-async def create_session(
-    service: SessionService, user_id: UUID
-) -> Session:
+async def create_session(service: SessionService, user_id: UUID) -> Session:
     return await service.create_session(
         user_id, SessionCreate(agent_id=uuid4(), base_prompt_id=uuid4())
     )
@@ -27,9 +25,10 @@ async def test_should_send_normalized_user_message(
     owner_id = uuid4()
     conversation = await create_session(session_service, owner_id)
 
-    message = await message_service.send_message(
+    dispatch = await message_service.send_message(
         conversation.id, owner_id, MessageSend(content="  Improve greeting  ")
     )
+    message = dispatch.message
 
     assert message.session_id == conversation.id
     assert message.role == MessageRole.USER
@@ -38,10 +37,11 @@ async def test_should_send_normalized_user_message(
     assert message.base_proposal_id is None
     assert message.questions == []
     assert message.warnings == []
+    assert dispatch.run.session_id == conversation.id
+    assert dispatch.run.user_message_id == message.id
+    assert dispatch.run.status == "queued"
     assert (
-        await message_service.get_message_by_id(
-            message.id, conversation.id, owner_id
-        )
+        await message_service.get_message_by_id(message.id, conversation.id, owner_id)
         is message
     )
 
@@ -56,13 +56,13 @@ async def test_should_send_message_from_proposal_in_same_session(
     proposal_id = uuid4()
     message_repository.add_proposal(proposal_id, conversation.id)
 
-    message = await message_service.send_message(
+    dispatch = await message_service.send_message(
         conversation.id,
         owner_id,
         MessageSend(content="Revise again", base_proposal_id=proposal_id),
     )
 
-    assert message.base_proposal_id == proposal_id
+    assert dispatch.message.base_proposal_id == proposal_id
 
 
 async def test_should_reject_proposal_from_another_session(
@@ -90,12 +90,19 @@ async def test_should_list_messages_in_chronological_pages(
 ) -> None:
     owner_id = uuid4()
     conversation = await create_session(session_service, owner_id)
-    first = await message_service.send_message(
-        conversation.id, owner_id, MessageSend(content="First")
-    )
-    second = await message_service.send_message(
-        conversation.id, owner_id, MessageSend(content="Second")
-    )
+    first = (
+        await message_service.send_message(
+            conversation.id, owner_id, MessageSend(content="First")
+        )
+    ).message
+    # Finish the first run to model the sequential application flow.
+    first_run = next(iter(message_service.agent_run_repository.runs.values()))
+    first_run.status = "completed"
+    second = (
+        await message_service.send_message(
+            conversation.id, owner_id, MessageSend(content="Second")
+        )
+    ).message
 
     assert await message_service.list_messages(conversation.id, owner_id, 1, 1) == [
         first
@@ -113,14 +120,14 @@ async def test_should_isolate_messages_by_owner_and_session(
     other_id = uuid4()
     conversation = await create_session(session_service, owner_id)
     other_session = await create_session(session_service, owner_id)
-    message = await message_service.send_message(
-        conversation.id, owner_id, MessageSend(content="Private")
-    )
+    message = (
+        await message_service.send_message(
+            conversation.id, owner_id, MessageSend(content="Private")
+        )
+    ).message
 
     with pytest.raises(NotFoundError):
-        await message_service.get_message_by_id(
-            message.id, conversation.id, other_id
-        )
+        await message_service.get_message_by_id(message.id, conversation.id, other_id)
     with pytest.raises(NotFoundError):
         await message_service.get_message_by_id(message.id, other_session.id, owner_id)
     with pytest.raises(NotFoundError):
@@ -155,9 +162,11 @@ async def test_should_hide_messages_when_session_is_deleted(
 ) -> None:
     owner_id = uuid4()
     conversation = await create_session(session_service, owner_id)
-    message = await message_service.send_message(
-        conversation.id, owner_id, MessageSend(content="Temporary")
-    )
+    message = (
+        await message_service.send_message(
+            conversation.id, owner_id, MessageSend(content="Temporary")
+        )
+    ).message
 
     await session_service.delete_session(conversation.id, owner_id)
 

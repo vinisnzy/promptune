@@ -1,7 +1,12 @@
 from collections.abc import Sequence
+from dataclasses import dataclass
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
+
 from promptune.core.exceptions import ConflictError, InvalidInputError, NotFoundError
+from promptune.modules.agent_run.model import AgentRun
+from promptune.modules.agent_run.repository import IAgentRunRepository
 from promptune.modules.message.model import Message, MessageRole
 from promptune.modules.message.repository import IMessageRepository
 from promptune.modules.message.schema import MessageSend
@@ -9,14 +14,22 @@ from promptune.modules.session.model import Session, SessionStatus
 from promptune.modules.session.repository import ISessionRepository
 
 
+@dataclass(frozen=True)
+class MessageDispatch:
+    message: Message
+    run: AgentRun
+
+
 class MessageService:
     def __init__(
         self,
         repository: IMessageRepository,
         session_repository: ISessionRepository,
+        agent_run_repository: IAgentRunRepository,
     ) -> None:
         self.repository = repository
         self.session_repository = session_repository
+        self.agent_run_repository = agent_run_repository
 
     async def list_messages(
         self, session_id: UUID, user_id: UUID, page: int, size: int
@@ -36,20 +49,27 @@ class MessageService:
 
     async def send_message(
         self, session_id: UUID, user_id: UUID, data: MessageSend
-    ) -> Message:
+    ) -> MessageDispatch:
         content = data.content.strip()
         if not content:
             raise InvalidInputError("content must not be blank")
         conversation = await self._get_session(session_id, user_id)
         if conversation.status != SessionStatus.ACTIVE:
             raise ConflictError("Session is not active")
-        return await self.repository.create(
+        message = await self.repository.create(
             session_id=session_id,
             user_id=user_id,
             role=MessageRole.USER,
             content=content,
             base_proposal_id=data.base_proposal_id,
         )
+        try:
+            run = await self.agent_run_repository.create(
+                session_id=session_id, user_message_id=message.id
+            )
+        except IntegrityError as error:
+            raise ConflictError("Session already has an active agent run") from error
+        return MessageDispatch(message=message, run=run)
 
     async def _get_session(self, session_id: UUID, user_id: UUID) -> Session:
         conversation = await self.session_repository.get_by_id(session_id, user_id)

@@ -7,8 +7,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from promptune.core.exceptions import InvalidInputError
+from promptune.core.exceptions import ConflictError, InvalidInputError
 from promptune.modules.agent.model import Agent
+from promptune.modules.agent_run.model import AgentRun, AgentRunStatus
 from promptune.modules.auth.models.user import User
 from promptune.modules.prompt.model import Prompt
 from promptune.modules.session.model import Session, SessionStatus
@@ -133,6 +134,7 @@ class SessionRepository(ISessionRepository):
         conversation = (await self.session.execute(stmt)).scalar_one_or_none()
         if conversation is None:
             return None
+        await self._reject_active_run(session_id)
         if conversation.status != SessionStatus.COMPLETED:
             conversation.status = SessionStatus.COMPLETED
             await self.session.flush()
@@ -153,6 +155,15 @@ class SessionRepository(ISessionRepository):
         conversation = (await self.session.execute(stmt)).scalar_one_or_none()
         if conversation is None:
             return False
+        await self._reject_active_run(session_id)
         conversation.deleted_at = datetime.now(UTC)
         await self.session.flush()
         return True
+
+    async def _reject_active_run(self, session_id: UUID) -> None:
+        stmt = select(AgentRun.id).where(
+            AgentRun.session_id == session_id,
+            AgentRun.status.in_((AgentRunStatus.QUEUED, AgentRunStatus.PROCESSING)),
+        )
+        if (await self.session.execute(stmt)).scalar_one_or_none() is not None:
+            raise ConflictError("Session has an active agent run")

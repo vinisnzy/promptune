@@ -12,8 +12,12 @@ from promptune.core.config import Settings, get_settings
 from promptune.main import create_app
 from promptune.modules.agent.router import get_agent_service
 from promptune.modules.agent.service import AgentService
+from promptune.modules.agent_run.router import get_agent_run_service
+from promptune.modules.agent_run.service import AgentRunService
 from promptune.modules.auth.dependencies import get_auth_service
 from promptune.modules.auth.service import AuthService
+from promptune.modules.message.router import get_message_service
+from promptune.modules.message.service import MessageService
 from promptune.modules.prompt.router import get_prompt_service
 from promptune.modules.prompt.service import PromptService
 from promptune.modules.prompt_proposal.router import get_prompt_proposal_service
@@ -26,6 +30,9 @@ def settings() -> Settings:
         database_url="postgresql+asyncpg://test:test@localhost/unused",
         jwt_secret="test-secret-for-http-tests-at-least-32-bytes",
         jwt_algorithm="HS256",
+        llm_model="test-model",
+        llm_provider="groq",
+        groq_api_key="test-key",
     )
 
 
@@ -54,6 +61,16 @@ def prompt_proposal_service_mock() -> AsyncMock:
 
 
 @pytest.fixture
+def message_service_mock() -> AsyncMock:
+    return AsyncMock(spec=MessageService)
+
+
+@pytest.fixture
+def agent_run_service_mock() -> AsyncMock:
+    return AsyncMock(spec=AgentRunService)
+
+
+@pytest.fixture
 def auth_headers() -> dict[str, str]:
     return {"Authorization": "Bearer test-token"}
 
@@ -65,15 +82,19 @@ def app(
     agent_service_mock: AsyncMock,
     prompt_service_mock: AsyncMock,
     prompt_proposal_service_mock: AsyncMock,
+    message_service_mock: AsyncMock,
+    agent_run_service_mock: AsyncMock,
 ) -> FastAPI:
     app = create_app(settings)
     app.dependency_overrides[get_settings] = lambda: settings
     app.dependency_overrides[get_auth_service] = lambda: auth_service_mock
     app.dependency_overrides[get_agent_service] = lambda: agent_service_mock
     app.dependency_overrides[get_prompt_service] = lambda: prompt_service_mock
-    app.dependency_overrides[get_prompt_proposal_service] = (
-        lambda: prompt_proposal_service_mock
+    app.dependency_overrides[get_prompt_proposal_service] = lambda: (
+        prompt_proposal_service_mock
     )
+    app.dependency_overrides[get_message_service] = lambda: message_service_mock
+    app.dependency_overrides[get_agent_run_service] = lambda: agent_run_service_mock
     return app
 
 

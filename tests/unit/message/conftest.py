@@ -26,8 +26,19 @@ def message_repository(
 
 
 @pytest.fixture
+def agent_run_repository(
+    session_repository: InMemorySessionRepository,
+) -> InMemoryAgentRunRepository:
+    return InMemoryAgentRunRepository(session_repository)
+
+
+@pytest.fixture
 def message_service(
     message_repository: InMemoryMessageRepository,
     session_repository: InMemorySessionRepository,
+    agent_run_repository: InMemoryAgentRunRepository,
 ) -> MessageService:
-    return MessageService(message_repository, session_repository)
+    return MessageService(message_repository, session_repository, agent_run_repository)
+
+
+from tests.unit.agent_run.in_memory_repository import InMemoryAgentRunRepository
