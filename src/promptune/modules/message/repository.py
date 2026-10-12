@@ -24,6 +24,7 @@ class IMessageRepository(ABC):
         self,
         *,
         session_id: UUID,
+        user_id: UUID,
         role: MessageRole,
         content: str,
         reply_to_id: UUID | None = None,
@@ -33,16 +34,18 @@ class IMessageRepository(ABC):
     ) -> Message: ...
 
     @abstractmethod
-    async def get_by_id(self, message_id: UUID, session_id: UUID) -> Message | None: ...
+    async def get_by_id(
+        self, message_id: UUID, session_id: UUID, user_id: UUID
+    ) -> Message | None: ...
 
     @abstractmethod
     async def list_by_session(
-        self, session_id: UUID, page: int, size: int
+        self, session_id: UUID, user_id: UUID, page: int, size: int
     ) -> Sequence[Message]: ...
 
     @abstractmethod
     async def list_before_for_editing(
-        self, session_id: UUID, message_id: UUID
+        self, session_id: UUID, message_id: UUID, user_id: UUID
     ) -> Sequence[Message]: ...
 
 
@@ -50,17 +53,23 @@ class MessageRepository(IMessageRepository):
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    def _visible_session(self, session_id: UUID):
+    def _visible_session(self, session_id: UUID, user_id: UUID):
         return (
             select(Session)
             .join(Agent, Session.agent_id == Agent.id)
-            .where(Session.id == session_id, Agent.deleted_at.is_(None))
+            .where(
+                Session.id == session_id,
+                Session.user_id == user_id,
+                Session.deleted_at.is_(None),
+                Agent.deleted_at.is_(None),
+            )
         )
 
     async def create(
         self,
         *,
         session_id: UUID,
+        user_id: UUID,
         role: MessageRole,
         content: str,
         reply_to_id: UUID | None = None,
@@ -72,7 +81,7 @@ class MessageRepository(IMessageRepository):
             raise InvalidInputError("Invalid message role")
         conversation = (
             await self.session.execute(
-                self._visible_session(session_id).with_for_update(of=Session)
+                self._visible_session(session_id, user_id).with_for_update(of=Session)
             )
         ).scalar_one_or_none()
         if conversation is None:
@@ -109,11 +118,13 @@ class MessageRepository(IMessageRepository):
         await self.session.flush()
         return message
 
-    async def get_by_id(self, message_id: UUID, session_id: UUID) -> Message | None:
+    async def get_by_id(
+        self, message_id: UUID, session_id: UUID, user_id: UUID
+    ) -> Message | None:
         stmt = (
             select(Message)
             .where(Message.id == message_id, Message.session_id == session_id)
-            .where(self._visible_session(session_id).exists())
+            .where(self._visible_session(session_id, user_id).exists())
             .options(
                 selectinload(Message.base_proposal).selectinload(PromptProposal.message)
             )
@@ -121,13 +132,13 @@ class MessageRepository(IMessageRepository):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def list_by_session(
-        self, session_id: UUID, page: int, size: int
+        self, session_id: UUID, user_id: UUID, page: int, size: int
     ) -> Sequence[Message]:
         _check_page(page, size)
         stmt = (
             select(Message)
             .where(Message.session_id == session_id)
-            .where(self._visible_session(session_id).exists())
+            .where(self._visible_session(session_id, user_id).exists())
             .order_by(Message.created_at, Message.id)
             .offset((page - 1) * size)
             .limit(size)
@@ -135,9 +146,9 @@ class MessageRepository(IMessageRepository):
         return (await self.session.execute(stmt)).scalars().all()
 
     async def list_before_for_editing(
-        self, session_id: UUID, message_id: UUID
+        self, session_id: UUID, message_id: UUID, user_id: UUID
     ) -> Sequence[Message]:
-        current = await self.get_by_id(message_id, session_id)
+        current = await self.get_by_id(message_id, session_id, user_id)
         if current is None:
             raise NotFoundError("Message does not exist in this session")
         stmt = (
@@ -152,6 +163,7 @@ class MessageRepository(IMessageRepository):
                     ),
                 ),
             )
+            .where(self._visible_session(session_id, user_id).exists())
             .options(selectinload(Message.proposal))
             .order_by(Message.created_at, Message.id)
         )
