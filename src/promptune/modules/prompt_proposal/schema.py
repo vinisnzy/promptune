@@ -1,31 +1,14 @@
 from datetime import datetime
-from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from promptune.modules.prompt_proposal.model import PromptProposalStatus
 
 
-class PromptProposalCreate(BaseModel):
-    source_prompt_id: UUID
-    change_request: Annotated[str, Field(min_length=1)]
-
-
-class PromptProposalDraft(BaseModel):
-    """Deprecated flat agent response used by the legacy proposal endpoint."""
-
-    proposed_content: str
-    proposed_description: Annotated[str, Field(min_length=1, max_length=200)]
-    summary: list[str]
-    questions: list[str]
-    warnings: list[str]
-
-
 class PromptProposalRead(BaseModel):
-    """Deprecated response model used by the legacy proposal endpoint."""
-
     id: UUID
+    message_id: UUID
     agent_id: UUID
     source_prompt_id: UUID
     change_request: str

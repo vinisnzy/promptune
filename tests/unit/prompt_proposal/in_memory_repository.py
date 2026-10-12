@@ -2,109 +2,116 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from promptune.core.exceptions import ConflictError
-from promptune.modules.prompt_proposal.model import (
-    PromptProposal,
-    PromptProposalStatus,
-)
+from promptune.agents.prompt_editor.schema import PromptProposalOutput
+from promptune.core.exceptions import ConflictError, InvalidInputError
+from promptune.modules.prompt_proposal.model import PromptProposal, PromptProposalStatus
 from promptune.modules.prompt_proposal.repository import IPromptProposalRepository
-from promptune.modules.prompt_proposal.schema import PromptProposalDraft
-from tests.unit.agent.in_memory_repository import InMemoryAgentRepository
-from tests.unit.prompt.in_memory_repository import InMemoryPromptRepository
 
 
 class InMemoryPromptProposalRepository(IPromptProposalRepository):
-    def __init__(
-        self,
-        agents: InMemoryAgentRepository,
-        prompts: InMemoryPromptRepository,
-    ) -> None:
-        self.agents = agents
-        self.prompts = prompts
-        self.prompt_proposals: dict[UUID, PromptProposal] = {}
+    def __init__(self) -> None:
+        self.proposals: dict[UUID, PromptProposal] = {}
+        self.owners: dict[UUID, UUID] = {}
+        self.message_owners: dict[UUID, UUID] = {}
 
     async def list_by_agent(
-        self, agent_id: UUID, page: int, size: int
+        self, agent_id: UUID, user_id: UUID, page: int, size: int
     ) -> Sequence[PromptProposal]:
-        if await self.agents.get_agent_by_id(agent_id) is None:
-            return []
-        prompt_proposals = [
-            prompt_proposal
-            for prompt_proposal in self.prompt_proposals.values()
-            if prompt_proposal.agent_id == agent_id
+        items = [
+            proposal
+            for proposal in self.proposals.values()
+            if proposal.agent_id == agent_id and self.owners[proposal.id] == user_id
         ]
-        prompt_proposals.sort(
-            key=lambda prompt_proposal: (
-                prompt_proposal.created_at,
-                prompt_proposal.id,
-            ),
-            reverse=True,
-        )
-        return prompt_proposals[(page - 1) * size : page * size]
+        items.sort(key=lambda item: (item.created_at, item.id), reverse=True)
+        return items[(page - 1) * size : page * size]
 
-    async def get_by_id(self, prompt_proposal_id: UUID) -> PromptProposal | None:
-        prompt_proposal = self.prompt_proposals.get(prompt_proposal_id)
-        if (
-            prompt_proposal is None
-            or await self.agents.get_agent_by_id(prompt_proposal.agent_id) is None
-        ):
+    async def get_by_id(
+        self, prompt_proposal_id: UUID, user_id: UUID
+    ) -> PromptProposal | None:
+        proposal = self.proposals.get(prompt_proposal_id)
+        if proposal is None or self.owners[prompt_proposal_id] != user_id:
             return None
-        return prompt_proposal
+        return proposal
 
-    async def create(
+    async def create_for_message(
         self,
+        *,
+        message_id: UUID,
+        agent_id: UUID,
         source_prompt_id: UUID,
         change_request: str,
-        draft: PromptProposalDraft,
-    ) -> PromptProposal | None:
-        source = await self.prompts.get_prompt_by_id(source_prompt_id)
-        if source is None:
-            return None
+        output: PromptProposalOutput,
+        questions: list[str],
+        warnings: list[str],
+    ) -> PromptProposal:
+        user_id = self.message_owners.get(message_id)
+        if user_id is None:
+            raise InvalidInputError("Proposal message does not exist")
         now = datetime.now(UTC)
-        prompt_proposal = PromptProposal(
+        proposal = PromptProposal(
             id=uuid4(),
-            created_at=now,
-            updated_at=now,
-            agent_id=source.agent_id,
-            source_prompt_id=source.id,
+            message_id=message_id,
+            agent_id=agent_id,
+            source_prompt_id=source_prompt_id,
             change_request=change_request,
-            proposed_content=draft.proposed_content,
-            proposed_description=draft.proposed_description,
-            summary=draft.summary,
-            questions=draft.questions,
-            warnings=draft.warnings,
+            proposed_content=output.proposed_content,
+            proposed_description=output.proposed_description,
+            summary=output.summary,
+            questions=list(questions),
+            warnings=list(warnings),
             status=PromptProposalStatus.PENDING,
             approved_prompt_id=None,
+            created_at=now,
+            updated_at=now,
         )
-        self.prompt_proposals[prompt_proposal.id] = prompt_proposal
-        return prompt_proposal
+        self.proposals[proposal.id] = proposal
+        self.owners[proposal.id] = user_id
+        return proposal
 
-    async def approve(self, prompt_proposal_id: UUID) -> PromptProposal | None:
-        prompt_proposal = await self.get_by_id(prompt_proposal_id)
-        if prompt_proposal is None:
+    async def approve(
+        self, prompt_proposal_id: UUID, user_id: UUID
+    ) -> PromptProposal | None:
+        proposal = await self.get_by_id(prompt_proposal_id, user_id)
+        if proposal is None:
             return None
-        if prompt_proposal.status != PromptProposalStatus.PENDING:
+        if proposal.status != PromptProposalStatus.PENDING:
             raise ConflictError("Prompt proposal is already finalized")
-        prompt = await self.prompts.add_prompt(
-            {
-                "agent_id": prompt_proposal.agent_id,
-                "content": prompt_proposal.proposed_content,
-                "description": prompt_proposal.proposed_description,
-            }
+        proposal.status = PromptProposalStatus.APPROVED
+        proposal.approved_prompt_id = uuid4()
+        return proposal
+
+    async def discard(
+        self, prompt_proposal_id: UUID, user_id: UUID
+    ) -> PromptProposal | None:
+        proposal = await self.get_by_id(prompt_proposal_id, user_id)
+        if proposal is None:
+            return None
+        if proposal.status != PromptProposalStatus.PENDING:
+            raise ConflictError("Prompt proposal is already finalized")
+        proposal.status = PromptProposalStatus.DISCARDED
+        return proposal
+
+    def add(self, *, user_id: UUID, agent_id: UUID | None = None) -> PromptProposal:
+        now = datetime.now(UTC)
+        proposal = PromptProposal(
+            id=uuid4(),
+            message_id=uuid4(),
+            agent_id=agent_id or uuid4(),
+            source_prompt_id=uuid4(),
+            change_request="Improve greeting",
+            proposed_content="# Improved",
+            proposed_description="Improved greeting",
+            summary=["Updated greeting"],
+            questions=[],
+            warnings=[],
+            status=PromptProposalStatus.PENDING,
+            approved_prompt_id=None,
+            created_at=now,
+            updated_at=now,
         )
-        if prompt is None:
-            return None
-        prompt_proposal.approved_prompt_id = prompt.id
-        prompt_proposal.status = PromptProposalStatus.APPROVED
-        prompt_proposal.updated_at = datetime.now(UTC)
-        return prompt_proposal
+        self.proposals[proposal.id] = proposal
+        self.owners[proposal.id] = user_id
+        return proposal
 
-    async def discard(self, prompt_proposal_id: UUID) -> PromptProposal | None:
-        prompt_proposal = await self.get_by_id(prompt_proposal_id)
-        if prompt_proposal is None:
-            return None
-        if prompt_proposal.status != PromptProposalStatus.PENDING:
-            raise ConflictError("Prompt proposal is already finalized")
-        prompt_proposal.status = PromptProposalStatus.DISCARDED
-        prompt_proposal.updated_at = datetime.now(UTC)
-        return prompt_proposal
+    def add_message(self, *, message_id: UUID, user_id: UUID) -> None:
+        self.message_owners[message_id] = user_id
