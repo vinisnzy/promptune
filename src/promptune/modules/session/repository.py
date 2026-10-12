@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -40,6 +41,9 @@ class ISessionRepository(ABC):
     @abstractmethod
     async def complete(self, session_id: UUID, user_id: UUID) -> Session | None: ...
 
+    @abstractmethod
+    async def delete(self, session_id: UUID, user_id: UUID) -> bool: ...
+
 
 class SessionRepository(ISessionRepository):
     def __init__(self, session: AsyncSession) -> None:
@@ -57,7 +61,11 @@ class SessionRepository(ISessionRepository):
         stmt = (
             select(Session)
             .join(Agent, Session.agent_id == Agent.id)
-            .where(Session.user_id == user_id, Agent.deleted_at.is_(None))
+            .where(
+                Session.user_id == user_id,
+                Session.deleted_at.is_(None),
+                Agent.deleted_at.is_(None),
+            )
         )
         if agent_id is not None:
             stmt = stmt.where(Session.agent_id == agent_id)
@@ -77,6 +85,7 @@ class SessionRepository(ISessionRepository):
             .where(
                 Session.id == session_id,
                 Session.user_id == user_id,
+                Session.deleted_at.is_(None),
                 Agent.deleted_at.is_(None),
             )
             .options(selectinload(Session.agent), selectinload(Session.base_prompt))
@@ -116,6 +125,7 @@ class SessionRepository(ISessionRepository):
             .where(
                 Session.id == session_id,
                 Session.user_id == user_id,
+                Session.deleted_at.is_(None),
                 Agent.deleted_at.is_(None),
             )
             .with_for_update(of=Session)
@@ -127,3 +137,22 @@ class SessionRepository(ISessionRepository):
             conversation.status = SessionStatus.COMPLETED
             await self.session.flush()
         return conversation
+
+    async def delete(self, session_id: UUID, user_id: UUID) -> bool:
+        stmt = (
+            select(Session)
+            .join(Agent, Session.agent_id == Agent.id)
+            .where(
+                Session.id == session_id,
+                Session.user_id == user_id,
+                Session.deleted_at.is_(None),
+                Agent.deleted_at.is_(None),
+            )
+            .with_for_update(of=Session)
+        )
+        conversation = (await self.session.execute(stmt)).scalar_one_or_none()
+        if conversation is None:
+            return False
+        conversation.deleted_at = datetime.now(UTC)
+        await self.session.flush()
+        return True

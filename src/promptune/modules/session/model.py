@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, ForeignKey, String
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from promptune.database.base import Base, TimestampMixin, UUIDMixin
@@ -41,6 +42,9 @@ class Session(UUIDMixin, TimestampMixin, Base):
     )
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default=SessionStatus.ACTIVE
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
     )
 
     base_prompt: Mapped[Prompt] = relationship()

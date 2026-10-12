@@ -57,6 +57,11 @@ async def test_sessions_validate_references_filter_and_complete(session: AsyncSe
     assert await sessions.list_by_user(owner.id, 1, 10, status="completed") == [
         first
     ]
+    assert not await sessions.delete(first.id, other.id)
+    assert await sessions.delete(first.id, owner.id)
+    assert not await sessions.delete(first.id, owner.id)
+    assert await sessions.get_by_id(first.id, owner.id) is None
+    assert await sessions.list_by_user(owner.id, 1, 10, status="completed") == []
     with pytest.raises(InvalidInputError):
         await sessions.list_by_user(owner.id, 0, 10)
 
