@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parents[3]
@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     llm_model: str
     llm_provider: str
     groq_api_key: SecretStr
+    worker_poll_interval_seconds: float = Field(default=1.0, gt=0)
+    agent_run_lease_seconds: int = Field(default=120, gt=0)
+    agent_run_heartbeat_seconds: int = Field(default=30, ge=0)
+    agent_run_max_attempts: int = Field(default=3, gt=0)
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env", env_file_encoding="utf-8"

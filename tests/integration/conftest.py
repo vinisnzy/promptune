@@ -25,6 +25,9 @@ async def engine(postgres_url: str) -> AsyncIterator[AsyncEngine]:
             database_url=postgres_url,
             jwt_secret="test-secret-for-integration-tests-at-least-32-bytes",
             jwt_algorithm="HS256",
+            llm_model="test-model",
+            llm_provider="groq",
+            groq_api_key="test-key",
         )
     )
     async with engine.begin() as connection:
