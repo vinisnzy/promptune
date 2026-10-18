@@ -22,6 +22,8 @@ from promptune.modules.prompt.router import get_prompt_service
 from promptune.modules.prompt.service import PromptService
 from promptune.modules.prompt_proposal.router import get_prompt_proposal_service
 from promptune.modules.prompt_proposal.service import PromptProposalService
+from promptune.modules.session.router import get_session_service
+from promptune.modules.session.service import SessionService
 
 
 @pytest.fixture
@@ -66,6 +68,11 @@ def message_service_mock() -> AsyncMock:
 
 
 @pytest.fixture
+def session_service_mock() -> AsyncMock:
+    return AsyncMock(spec=SessionService)
+
+
+@pytest.fixture
 def agent_run_service_mock() -> AsyncMock:
     return AsyncMock(spec=AgentRunService)
 
@@ -83,6 +90,7 @@ def app(
     prompt_service_mock: AsyncMock,
     prompt_proposal_service_mock: AsyncMock,
     message_service_mock: AsyncMock,
+    session_service_mock: AsyncMock,
     agent_run_service_mock: AsyncMock,
 ) -> FastAPI:
     app = create_app(settings)
@@ -94,6 +102,7 @@ def app(
         prompt_proposal_service_mock
     )
     app.dependency_overrides[get_message_service] = lambda: message_service_mock
+    app.dependency_overrides[get_session_service] = lambda: session_service_mock
     app.dependency_overrides[get_agent_run_service] = lambda: agent_run_service_mock
     return app
 
