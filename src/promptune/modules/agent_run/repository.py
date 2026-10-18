@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 from promptune.core.exceptions import InvalidInputError
 from promptune.modules.agent.model import Agent
 from promptune.modules.agent_run.model import AgentRun, AgentRunStatus
+from promptune.modules.agent_run.notification import notify_agent_run_changed
 from promptune.modules.message.model import Message, MessageRole
 from promptune.modules.prompt_proposal.model import PromptProposal
 from promptune.modules.session.model import Session, SessionStatus
@@ -96,6 +97,8 @@ class AgentRunRepository(IAgentRunRepository):
                 run.finished_at = now
         if expired:
             await self.session.flush()
+            for run in expired:
+                await notify_agent_run_changed(self.session, run.id)
         return len(expired)
 
     async def claim_next(self, *, now: datetime, lease_seconds: int) -> AgentRun | None:
@@ -125,6 +128,7 @@ class AgentRunRepository(IAgentRunRepository):
         run.lease_token = uuid4()
         run.lease_expires_at = now + timedelta(seconds=lease_seconds)
         await self.session.flush()
+        await notify_agent_run_changed(self.session, run.id)
         return run
 
     async def get_claimed(self, run_id: UUID, lease_token: UUID) -> AgentRun | None:
@@ -178,6 +182,7 @@ class AgentRunRepository(IAgentRunRepository):
         run.lease_token = None
         run.lease_expires_at = None
         await self.session.flush()
+        await notify_agent_run_changed(self.session, run.id)
 
     async def mark_error(
         self,
@@ -198,3 +203,4 @@ class AgentRunRepository(IAgentRunRepository):
             run.status = AgentRunStatus.FAILED
             run.finished_at = now
         await self.session.flush()
+        await notify_agent_run_changed(self.session, run.id)
