@@ -64,10 +64,6 @@ class AgentRun(UUIDMixin, TimestampMixin, Base):
     error_message: Mapped[str | None] = mapped_column(String(300), nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    lease_expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), index=True
-    )
-    lease_token: Mapped[UUID | None] = mapped_column(nullable=True)
 
     session: Mapped[Session] = relationship(foreign_keys=[session_id])
     user_message: Mapped[Message] = relationship(foreign_keys=[user_message_id])

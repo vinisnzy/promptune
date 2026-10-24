@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
-from uuid import UUID, uuid4
+from datetime import datetime
+from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import exists, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -24,6 +24,39 @@ class IAgentRunRepository(ABC):
 
     @abstractmethod
     async def has_active_for_session(self, session_id: UUID) -> bool: ...
+
+    @abstractmethod
+    async def claim_by_id(self, run_id: UUID, *, now: datetime) -> int | None: ...
+
+    @abstractmethod
+    async def get_for_processing(self, run_id: UUID) -> AgentRun | None: ...
+
+    @abstractmethod
+    async def mark_completed(
+        self,
+        run_id: UUID,
+        attempt_count: int,
+        assistant_message_id: UUID,
+        *,
+        now: datetime,
+    ) -> bool: ...
+
+    @abstractmethod
+    async def mark_error(
+        self,
+        run_id: UUID,
+        attempt_count: int,
+        *,
+        code: str,
+        message: str,
+        retry: bool,
+        now: datetime,
+    ) -> bool: ...
+
+    @abstractmethod
+    async def mark_failed(
+        self, run_id: UUID, *, code: str, message: str, now: datetime
+    ) -> bool: ...
 
 
 class AgentRunRepository(IAgentRunRepository):
@@ -72,73 +105,47 @@ class AgentRunRepository(IAgentRunRepository):
         )
         return (await self.session.execute(stmt)).scalar_one_or_none() is not None
 
-    async def recover_expired(self, *, now: datetime, max_attempts: int) -> int:
-        stmt = (
-            select(AgentRun)
-            .where(
-                AgentRun.status == AgentRunStatus.PROCESSING,
-                AgentRun.lease_expires_at.is_not(None),
-                AgentRun.lease_expires_at <= now,
-            )
-            .with_for_update(skip_locked=True)
-        )
-        expired = (await self.session.execute(stmt)).scalars().all()
-        for run in expired:
-            run.lease_token = None
-            run.lease_expires_at = None
-            if run.attempt_count < max_attempts:
-                run.status = AgentRunStatus.QUEUED
-                run.error_code = "worker_timeout"
-                run.error_message = "The worker stopped before completing the run"
-            else:
-                run.status = AgentRunStatus.FAILED
-                run.error_code = "run_timeout"
-                run.error_message = "The run exceeded the retry limit"
-                run.finished_at = now
-        if expired:
-            await self.session.flush()
-            for run in expired:
-                await notify_agent_run_changed(self.session, run.id)
-        return len(expired)
-
-    async def claim_next(self, *, now: datetime, lease_seconds: int) -> AgentRun | None:
-        stmt = (
-            select(AgentRun)
-            .join(Session, AgentRun.session_id == Session.id)
+    async def claim_by_id(self, run_id: UUID, *, now: datetime) -> int | None:
+        """Atomically start an attempt; returns the new attempt_count or None."""
+        runnable_session = (
+            select(Session.id)
             .join(Agent, Session.agent_id == Agent.id)
             .where(
-                AgentRun.status == AgentRunStatus.QUEUED,
+                Session.id == AgentRun.session_id,
                 Session.status == SessionStatus.ACTIVE,
                 Session.deleted_at.is_(None),
                 Agent.deleted_at.is_(None),
             )
-            .order_by(AgentRun.created_at, AgentRun.id)
-            .with_for_update(of=AgentRun, skip_locked=True)
-            .limit(1)
         )
-        run = (await self.session.execute(stmt)).scalar_one_or_none()
-        if run is None:
-            return None
-        run.status = AgentRunStatus.PROCESSING
-        run.attempt_count += 1
-        run.started_at = run.started_at or now
-        run.finished_at = None
-        run.error_code = None
-        run.error_message = None
-        run.lease_token = uuid4()
-        run.lease_expires_at = now + timedelta(seconds=lease_seconds)
-        await self.session.flush()
-        await notify_agent_run_changed(self.session, run.id)
-        return run
-
-    async def get_claimed(self, run_id: UUID, lease_token: UUID) -> AgentRun | None:
         stmt = (
-            select(AgentRun)
+            update(AgentRun)
             .where(
                 AgentRun.id == run_id,
-                AgentRun.status == AgentRunStatus.PROCESSING,
-                AgentRun.lease_token == lease_token,
+                AgentRun.status.in_(
+                    (AgentRunStatus.QUEUED, AgentRunStatus.PROCESSING)
+                ),
+                exists(runnable_session),
             )
+            .values(
+                status=AgentRunStatus.PROCESSING,
+                attempt_count=AgentRun.attempt_count + 1,
+                started_at=func.coalesce(AgentRun.started_at, now),
+                finished_at=None,
+                error_code=None,
+                error_message=None,
+            )
+            .returning(AgentRun.attempt_count)
+            .execution_options(synchronize_session=False)
+        )
+        attempt_count = (await self.session.execute(stmt)).scalar_one_or_none()
+        if attempt_count is not None:
+            await notify_agent_run_changed(self.session, run_id)
+        return attempt_count
+
+    async def get_for_processing(self, run_id: UUID) -> AgentRun | None:
+        stmt = (
+            select(AgentRun)
+            .where(AgentRun.id == run_id)
             .options(
                 selectinload(AgentRun.session).selectinload(Session.agent),
                 selectinload(AgentRun.session).selectinload(Session.base_prompt),
@@ -146,61 +153,88 @@ class AgentRunRepository(IAgentRunRepository):
                 .selectinload(Message.base_proposal)
                 .selectinload(PromptProposal.message),
             )
+            .execution_options(populate_existing=True)
         )
         return (await self.session.execute(stmt)).scalar_one_or_none()
-
-    async def lock_claimed(self, run_id: UUID, lease_token: UUID) -> AgentRun | None:
-        stmt = (
-            select(AgentRun)
-            .where(
-                AgentRun.id == run_id,
-                AgentRun.status == AgentRunStatus.PROCESSING,
-                AgentRun.lease_token == lease_token,
-            )
-            .with_for_update()
-        )
-        return (await self.session.execute(stmt)).scalar_one_or_none()
-
-    async def heartbeat(
-        self, run_id: UUID, lease_token: UUID, *, now: datetime, lease_seconds: int
-    ) -> bool:
-        run = await self.lock_claimed(run_id, lease_token)
-        if run is None:
-            return False
-        run.lease_expires_at = now + timedelta(seconds=lease_seconds)
-        await self.session.flush()
-        return True
 
     async def mark_completed(
-        self, run: AgentRun, assistant_message_id: UUID, *, now: datetime
-    ) -> None:
-        run.assistant_message_id = assistant_message_id
-        run.status = AgentRunStatus.COMPLETED
-        run.error_code = None
-        run.error_message = None
-        run.finished_at = now
-        run.lease_token = None
-        run.lease_expires_at = None
-        await self.session.flush()
-        await notify_agent_run_changed(self.session, run.id)
+        self,
+        run_id: UUID,
+        attempt_count: int,
+        assistant_message_id: UUID,
+        *,
+        now: datetime,
+    ) -> bool:
+        return await self._finish_attempt(
+            run_id,
+            attempt_count,
+            assistant_message_id=assistant_message_id,
+            status=AgentRunStatus.COMPLETED,
+            error_code=None,
+            error_message=None,
+            finished_at=now,
+        )
 
     async def mark_error(
         self,
-        run: AgentRun,
+        run_id: UUID,
+        attempt_count: int,
         *,
         code: str,
         message: str,
         retry: bool,
         now: datetime,
-    ) -> None:
-        run.error_code = code
-        run.error_message = message
-        run.lease_token = None
-        run.lease_expires_at = None
-        if retry:
-            run.status = AgentRunStatus.QUEUED
-        else:
-            run.status = AgentRunStatus.FAILED
-            run.finished_at = now
-        await self.session.flush()
-        await notify_agent_run_changed(self.session, run.id)
+    ) -> bool:
+        return await self._finish_attempt(
+            run_id,
+            attempt_count,
+            status=AgentRunStatus.QUEUED if retry else AgentRunStatus.FAILED,
+            error_code=code,
+            error_message=message,
+            finished_at=None if retry else now,
+        )
+
+    async def mark_failed(
+        self, run_id: UUID, *, code: str, message: str, now: datetime
+    ) -> bool:
+        """Fail a run regardless of its attempt; for runs with no live attempt."""
+        stmt = (
+            update(AgentRun)
+            .where(
+                AgentRun.id == run_id,
+                AgentRun.status.in_(
+                    (AgentRunStatus.QUEUED, AgentRunStatus.PROCESSING)
+                ),
+            )
+            .values(
+                status=AgentRunStatus.FAILED,
+                error_code=code,
+                error_message=message,
+                finished_at=now,
+            )
+            .execution_options(synchronize_session=False)
+        )
+        return await self._execute_transition(stmt, run_id)
+
+    async def _finish_attempt(
+        self, run_id: UUID, attempt_count: int, **values: object
+    ) -> bool:
+        # Fencing: only the attempt that currently owns the run may change it.
+        stmt = (
+            update(AgentRun)
+            .where(
+                AgentRun.id == run_id,
+                AgentRun.status == AgentRunStatus.PROCESSING,
+                AgentRun.attempt_count == attempt_count,
+            )
+            .values(**values)
+            .execution_options(synchronize_session=False)
+        )
+        return await self._execute_transition(stmt, run_id)
+
+    async def _execute_transition(self, stmt, run_id: UUID) -> bool:
+        result = await self.session.execute(stmt)
+        if result.rowcount == 0:
+            return False
+        await notify_agent_run_changed(self.session, run_id)
+        return True
