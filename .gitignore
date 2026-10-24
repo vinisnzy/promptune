@@ -12,5 +12,7 @@ wheels/
 .env
 
 # Codex and Agents
+/.claude
 /.codex
 AGENTS.md
+CLAUDE.md
