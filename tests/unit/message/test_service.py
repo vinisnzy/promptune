@@ -3,12 +3,16 @@ from uuid import UUID, uuid4
 import pytest
 
 from promptune.core.exceptions import ConflictError, InvalidInputError, NotFoundError
+from promptune.modules.agent_run.model import AgentRunStatus
+from promptune.modules.agent_run.queue import QueueUnavailableError
 from promptune.modules.message.model import MessageRole
 from promptune.modules.message.schema import MessageSend
 from promptune.modules.message.service import MessageService
 from promptune.modules.session.model import Session
 from promptune.modules.session.schema import SessionCreate
 from promptune.modules.session.service import SessionService
+from tests.unit.agent_run.fake_publisher import FakeRunPublisher
+from tests.unit.agent_run.in_memory_repository import InMemoryAgentRunRepository
 from tests.unit.message.in_memory_repository import InMemoryMessageRepository
 
 
@@ -185,3 +189,57 @@ async def test_should_reject_invalid_message_queries(
         await message_service.list_messages(uuid4(), uuid4(), 1, 0)
     with pytest.raises(NotFoundError):
         await message_service.get_message_by_id(uuid4(), uuid4(), uuid4())
+
+
+async def test_should_publish_run_after_committing_it(
+    session_service: SessionService,
+    message_service: MessageService,
+    run_publisher: FakeRunPublisher,
+) -> None:
+    owner_id = uuid4()
+    conversation = await create_session(session_service, owner_id)
+    order: list[str] = []
+
+    async def commit() -> None:
+        order.append("commit")
+
+    message_service.commit = commit
+    original = run_publisher.publish_run
+
+    async def publish_run(run_id: UUID) -> None:
+        order.append("publish")
+        await original(run_id)
+
+    run_publisher.publish_run = publish_run
+
+    dispatch = await message_service.send_message(
+        conversation.id, owner_id, MessageSend(content="Improve greeting")
+    )
+
+    assert order == ["commit", "publish"]
+    assert run_publisher.published == [dispatch.run.id]
+
+
+async def test_should_fail_run_and_release_session_when_queue_is_unavailable(
+    session_service: SessionService,
+    message_service: MessageService,
+    agent_run_repository: InMemoryAgentRunRepository,
+    run_publisher: FakeRunPublisher,
+) -> None:
+    owner_id = uuid4()
+    conversation = await create_session(session_service, owner_id)
+    run_publisher.fail = True
+
+    with pytest.raises(QueueUnavailableError):
+        await message_service.send_message(
+            conversation.id, owner_id, MessageSend(content="Improve greeting")
+        )
+
+    (run,) = agent_run_repository.runs.values()
+    assert run.status == AgentRunStatus.FAILED
+    assert run.error_code == "queue_unavailable"
+    assert not await agent_run_repository.has_active_for_session(conversation.id)
+    run_publisher.fail = False
+    await message_service.send_message(
+        conversation.id, owner_id, MessageSend(content="Try again")
+    )

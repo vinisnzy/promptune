@@ -73,6 +73,8 @@ async def enqueue_run(engine: AsyncEngine):
             MessageRepository(session),
             SessionRepository(session),
             AgentRunRepository(session),
+            FakeRunPublisher(),
+            session.commit,
         ).send_message(
             conversation.id,
             owner.id,
@@ -371,6 +373,8 @@ async def test_active_run_blocks_complete_delete_and_new_message(
             MessageRepository(session),
             SessionRepository(session),
             AgentRunRepository(session),
+            FakeRunPublisher(),
+            session.commit,
         )
         with pytest.raises(ConflictError):
             await service.send_message(

@@ -1,3 +1,5 @@
+from unittest.mock import AsyncMock
+
 import pytest
 
 from promptune.modules.message.service import MessageService
@@ -33,12 +35,25 @@ def agent_run_repository(
 
 
 @pytest.fixture
+def run_publisher() -> FakeRunPublisher:
+    return FakeRunPublisher()
+
+
+@pytest.fixture
 def message_service(
     message_repository: InMemoryMessageRepository,
     session_repository: InMemorySessionRepository,
     agent_run_repository: InMemoryAgentRunRepository,
+    run_publisher: FakeRunPublisher,
 ) -> MessageService:
-    return MessageService(message_repository, session_repository, agent_run_repository)
+    return MessageService(
+        message_repository,
+        session_repository,
+        agent_run_repository,
+        run_publisher,
+        AsyncMock(),
+    )
 
 
+from tests.unit.agent_run.fake_publisher import FakeRunPublisher
 from tests.unit.agent_run.in_memory_repository import InMemoryAgentRunRepository

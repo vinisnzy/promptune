@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from promptune.database.session import get_async_session
+from promptune.modules.agent_run.queue import IRunPublisher, get_run_publisher
 from promptune.modules.agent_run.repository import AgentRunRepository
 from promptune.modules.agent_run.schema import AgentRunSummary, MessageAccepted
 from promptune.modules.auth.dependencies import CurrentUser, get_current_user
@@ -23,12 +24,15 @@ router = APIRouter(
 
 async def get_message_service(
     session: Annotated[AsyncSession, Depends(get_async_session)],
+    publisher: Annotated[IRunPublisher, Depends(get_run_publisher)],
 ) -> AsyncIterator[MessageService]:
     try:
         yield MessageService(
             MessageRepository(session),
             SessionRepository(session),
             AgentRunRepository(session),
+            publisher,
+            session.commit,
         )
         await session.commit()
     except Exception:

@@ -1,11 +1,13 @@
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
 
 from promptune.core.exceptions import ConflictError, InvalidInputError, NotFoundError
 from promptune.modules.agent_run.model import AgentRun
+from promptune.modules.agent_run.queue import IRunPublisher, QueueUnavailableError
 from promptune.modules.agent_run.repository import IAgentRunRepository
 from promptune.modules.message.model import Message, MessageRole
 from promptune.modules.message.repository import IMessageRepository
@@ -26,10 +28,14 @@ class MessageService:
         repository: IMessageRepository,
         session_repository: ISessionRepository,
         agent_run_repository: IAgentRunRepository,
+        publisher: IRunPublisher,
+        commit: Callable[[], Awaitable[None]],
     ) -> None:
         self.repository = repository
         self.session_repository = session_repository
         self.agent_run_repository = agent_run_repository
+        self.publisher = publisher
+        self.commit = commit
 
     async def list_messages(
         self, session_id: UUID, user_id: UUID, page: int, size: int
@@ -69,6 +75,20 @@ class MessageService:
             )
         except IntegrityError as error:
             raise ConflictError("Session already has an active agent run") from error
+        # The worker can only find the run once it is committed, so publish after.
+        await self.commit()
+        try:
+            await self.publisher.publish_run(run.id)
+        except QueueUnavailableError:
+            # Release the one-active-run-per-session slot so the user can resend.
+            await self.agent_run_repository.mark_failed(
+                run.id,
+                code="queue_unavailable",
+                message="The processing queue is temporarily unavailable",
+                now=datetime.now(UTC),
+            )
+            await self.commit()
+            raise
         return MessageDispatch(message=message, run=run)
 
     async def _get_session(self, session_id: UUID, user_id: UUID) -> Session:

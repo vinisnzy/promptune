@@ -7,6 +7,7 @@ import pytest
 from httpx import AsyncClient
 
 from promptune.core.exceptions import NotFoundError
+from promptune.modules.agent_run.queue import QueueUnavailableError
 from promptune.modules.message.service import MessageDispatch
 
 
@@ -165,3 +166,22 @@ async def test_should_require_authentication_for_message_reads(
     assert response.status_code == 401
     assert response.json() == {"detail": "Authentication required"}
     message_service_mock.list_messages.assert_not_awaited()
+
+
+async def test_should_return_503_when_queue_is_unavailable(
+    client: AsyncClient,
+    message_service_mock: AsyncMock,
+    auth_headers: dict[str, str],
+) -> None:
+    message_service_mock.send_message.side_effect = QueueUnavailableError()
+
+    response = await client.post(
+        f"/sessions/{uuid4()}/messages",
+        json={"content": "Improve greeting"},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "The processing queue is temporarily unavailable"
+    }
