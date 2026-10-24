@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     agent_run_lease_seconds: int = Field(default=120, gt=0)
     agent_run_heartbeat_seconds: int = Field(default=30, ge=0)
     agent_run_max_attempts: int = Field(default=3, gt=0)
+    agent_run_retry_delay_seconds: int = Field(default=15, gt=0)
+    agent_run_timeout_seconds: int = Field(default=90, gt=0)
+    rabbitmq_url: str = "amqp://app:app@localhost:5672/"
+    worker_prefetch: int = Field(default=1, gt=0)
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env", env_file_encoding="utf-8"
