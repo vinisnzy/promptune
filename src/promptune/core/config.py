@@ -16,9 +16,6 @@ class Settings(BaseSettings):
     llm_model: str
     llm_provider: str
     groq_api_key: SecretStr
-    worker_poll_interval_seconds: float = Field(default=1.0, gt=0)
-    agent_run_lease_seconds: int = Field(default=120, gt=0)
-    agent_run_heartbeat_seconds: int = Field(default=30, ge=0)
     agent_run_max_attempts: int = Field(default=3, gt=0)
     agent_run_retry_delay_seconds: int = Field(default=15, gt=0)
     agent_run_timeout_seconds: int = Field(default=90, gt=0)
