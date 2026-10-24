@@ -200,9 +200,14 @@ class AgentRunProcessor:
 
 
 def _is_transient(error: Exception) -> bool:
-    return isinstance(error, (ConnectionError, TimeoutError)) or type(
-        error
-    ).__name__ in TRANSIENT_ERROR_NAMES
+    if isinstance(error, (ConnectionError, TimeoutError)):
+        return True
+    if type(error).__name__ in TRANSIENT_ERROR_NAMES:
+        return True
+    status = getattr(error, "status_code", None)
+    if status is None:
+        status = getattr(getattr(error, "response", None), "status_code", None)
+    return isinstance(status, int) and (status == 429 or status >= 500)
 
 
 def _safe_error(error: Exception, transient: bool) -> tuple[str, str]:
