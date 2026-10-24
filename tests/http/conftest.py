@@ -24,6 +24,7 @@ from promptune.modules.prompt_proposal.router import get_prompt_proposal_service
 from promptune.modules.prompt_proposal.service import PromptProposalService
 from promptune.modules.session.router import get_session_service
 from promptune.modules.session.service import SessionService
+from tests.unit.agent_run.fake_publisher import FakeRunPublisher
 
 
 @pytest.fixture
@@ -93,7 +94,7 @@ def app(
     session_service_mock: AsyncMock,
     agent_run_service_mock: AsyncMock,
 ) -> FastAPI:
-    app = create_app(settings)
+    app = create_app(settings, run_publisher=FakeRunPublisher())
     app.dependency_overrides[get_settings] = lambda: settings
     app.dependency_overrides[get_auth_service] = lambda: auth_service_mock
     app.dependency_overrides[get_agent_service] = lambda: agent_service_mock

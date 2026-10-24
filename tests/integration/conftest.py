@@ -51,3 +51,15 @@ async def session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
         await db_session.close()
         await transaction.rollback()
         await connection.close()
+
+
+@pytest.fixture(scope="session")
+def rabbitmq_url() -> Iterator[str]:
+    from testcontainers.community.rabbitmq import RabbitMqContainer
+
+    with RabbitMqContainer("rabbitmq:4-management") as rabbitmq:
+        params = rabbitmq.get_connection_params()
+        yield (
+            f"amqp://{rabbitmq.username}:{rabbitmq.password}"
+            f"@{params.host}:{params.port}/"
+        )

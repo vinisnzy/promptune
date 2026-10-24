@@ -9,6 +9,7 @@ from promptune.core.logging import setup_logging
 from promptune.database.session import build_engine, build_session_maker
 from promptune.middleware.request_context import register_request_context_middleware
 from promptune.modules.agent.router import router as agent_router
+from promptune.modules.agent_run.queue import IRunPublisher, RabbitRunPublisher
 from promptune.modules.agent_run.router import router as agent_run_router
 from promptune.modules.auth.router import router as auth_router
 from promptune.modules.message.router import router as message_router
@@ -19,7 +20,9 @@ from promptune.modules.session.router import router as session_router
 logger = logging.getLogger(__name__)
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None, run_publisher: IRunPublisher | None = None
+) -> FastAPI:
     setup_logging()
 
     @asynccontextmanager
@@ -30,10 +33,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.settings = app_settings
         app.state.engine = engine
         app.state.session_maker = session_maker
+        rabbit_publisher: RabbitRunPublisher | None = None
+        if run_publisher is None:
+            rabbit_publisher = await RabbitRunPublisher.connect(
+                app_settings.rabbitmq_url,
+                retry_delay_seconds=app_settings.agent_run_retry_delay_seconds,
+            )
+        app.state.run_publisher = run_publisher or rabbit_publisher
         logger.info("Application started", extra={"event": "application_started"})
         try:
             yield
         finally:
+            if rabbit_publisher is not None:
+                await rabbit_publisher.close()
             await engine.dispose()
             logger.info("Application stopped", extra={"event": "application_stopped"})
 
