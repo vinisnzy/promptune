@@ -6,7 +6,8 @@ natural, revise as alterações propostas e mantenha um histórico de versões.
 ## Como rodar
 
 ```bash
-cp .env.example .env          # preencha GROQ_API_KEY e JWT_SECRET
+cp .env.example .env          # preencha LLM_API_KEY e JWT_SECRET
+uv sync --extra groq          # pacote do provedor da LLM
 docker compose up -d          # Postgres + RabbitMQ
 uv run alembic upgrade head   # aplica as migrations
 uv run fastapi dev            # API
@@ -18,6 +19,23 @@ O painel de administração do RabbitMQ fica em http://localhost:15672
 `RABBITMQ_PASSWORD`).
 
 `uv run promptune-worker --once` consome no máximo uma mensagem da fila, processa e encerra.
+
+### Escolhendo o modelo
+
+O agente funciona com qualquer provedor suportado pelo LangChain. Instale o
+pacote do provedor e configure o `.env`:
+
+```bash
+uv sync --extra openai        # extras disponíveis: openai, anthropic, groq (gratuito)
+uv add langchain-<provedor>   # para outro provedor, ex.: langchain-google-genai
+```
+
+```env
+LLM_PROVIDER=openai
+LLM_MODEL=gpt-4.1-mini
+LLM_API_KEY=sk-...
+LLM_BASE_URL=                 # opcional, para endpoints compatíveis com OpenAI
+```
 
 ## Stack
 
