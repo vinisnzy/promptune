@@ -35,7 +35,7 @@ def settings() -> Settings:
         jwt_algorithm="HS256",
         llm_model="test-model",
         llm_provider="groq",
-        groq_api_key="test-key",
+        llm_api_key="test-key",
     )
 
 

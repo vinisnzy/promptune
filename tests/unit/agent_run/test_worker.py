@@ -2,8 +2,9 @@ import json
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
+from promptune.core.config import Settings
 from promptune.modules.agent_run.processor import ProcessResult
-from promptune.modules.agent_run.worker import RunConsumer
+from promptune.modules.agent_run.worker import RunConsumer, chat_model_options
 
 
 def make_message(body: bytes) -> AsyncMock:
@@ -44,3 +45,33 @@ async def test_should_reject_malformed_message_without_requeue() -> None:
 
     processor.process.assert_not_awaited()
     message.reject.assert_awaited_once_with(requeue=False)
+
+
+def make_settings(**overrides) -> Settings:
+    return Settings(
+        database_url="postgresql+asyncpg://test:test@localhost/unused",
+        jwt_secret="test-secret-for-unit-tests-at-least-32-bytes",
+        jwt_algorithm="HS256",
+        llm_model="gpt-4.1-mini",
+        llm_provider="openai",
+        _env_file=None,
+        **overrides,
+    )
+
+
+def test_should_pass_api_key_and_base_url_when_configured() -> None:
+    settings = make_settings(llm_api_key="secret", llm_base_url="http://llm:8000/v1")
+
+    assert chat_model_options(settings) == {
+        "model": "gpt-4.1-mini",
+        "model_provider": "openai",
+        "api_key": "secret",
+        "base_url": "http://llm:8000/v1",
+    }
+
+
+def test_should_omit_api_key_and_base_url_when_absent() -> None:
+    assert chat_model_options(make_settings()) == {
+        "model": "gpt-4.1-mini",
+        "model_provider": "openai",
+    }

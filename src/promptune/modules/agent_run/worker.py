@@ -10,7 +10,7 @@ from langchain.chat_models import init_chat_model
 
 from promptune.agents.prompt_editor.agent import PromptEditorAgent
 from promptune.agents.prompt_editor.configuration import load_editor_system_prompt
-from promptune.core.config import get_settings
+from promptune.core.config import Settings, get_settings
 from promptune.core.logging import setup_logging
 from promptune.database.session import build_engine, build_session_maker
 from promptune.modules.agent_run.processor import AgentRunProcessor, ProcessResult
@@ -46,15 +46,20 @@ class RunConsumer:
             await message.nack(requeue=True)
 
 
+def chat_model_options(settings: Settings) -> dict[str, str]:
+    options = {"model": settings.llm_model, "model_provider": settings.llm_provider}
+    if settings.llm_api_key is not None:
+        options["api_key"] = settings.llm_api_key.get_secret_value()
+    if settings.llm_base_url:
+        options["base_url"] = settings.llm_base_url
+    return options
+
+
 async def run_worker(*, once: bool = False) -> None:
     settings = get_settings()
     engine = build_engine(settings)
     session_maker = build_session_maker(engine)
-    model = init_chat_model(
-        model=settings.llm_model,
-        model_provider=settings.llm_provider,
-        api_key=settings.groq_api_key.get_secret_value(),
-    )
+    model = init_chat_model(**chat_model_options(settings))
     publisher = await RabbitRunPublisher.connect(
         settings.rabbitmq_url,
         retry_delay_seconds=settings.agent_run_retry_delay_seconds,

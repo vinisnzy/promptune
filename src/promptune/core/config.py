@@ -15,7 +15,8 @@ class Settings(BaseSettings):
     refresh_token_expires_in_days: int = 7
     llm_model: str
     llm_provider: str
-    groq_api_key: SecretStr
+    llm_api_key: SecretStr | None = None
+    llm_base_url: str | None = None
     agent_run_max_attempts: int = Field(default=3, gt=0)
     agent_run_retry_delay_seconds: int = Field(default=15, gt=0)
     agent_run_timeout_seconds: int = Field(default=90, gt=0)
