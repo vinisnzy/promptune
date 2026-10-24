@@ -3,8 +3,8 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from promptune.modules.auth.models.refresh_token import RefreshToken
-from promptune.modules.auth.repository import IUserRepository
 from promptune.modules.auth.models.user import User
+from promptune.modules.auth.repository import IUserRepository
 
 
 class InMemoryUserRepository(IUserRepository):
